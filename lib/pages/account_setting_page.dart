@@ -1,19 +1,11 @@
 import 'dart:io';
 
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:firebase_core/firebase_core.dart';
-import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:tricycall_thesis/controller/auth_controller.dart';
-import 'package:tricycall_thesis/pages/home_page.dart';
-import 'package:tricycall_thesis/pages/login_page.dart';
 import 'package:tricycall_thesis/widgets/input_text.dart';
-import 'package:tricycall_thesis/widgets/text_widget.dart';
-import 'package:path/path.dart' as Path;
 
 import '../widgets/green_button.dart';
 

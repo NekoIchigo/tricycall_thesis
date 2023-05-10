@@ -6,7 +6,6 @@ import 'package:tricycall_thesis/pages/login_page.dart';
 
 import 'controller/auth_controller.dart';
 import 'firebase_options.dart';
-import 'pages/account_setting_page.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();

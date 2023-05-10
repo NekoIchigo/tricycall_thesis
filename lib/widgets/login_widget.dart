@@ -1,8 +1,6 @@
 import 'package:fl_country_code_picker/fl_country_code_picker.dart';
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:tricycall_thesis/pages/otp_verification_page.dart';
 
 import 'text_widget.dart';
 

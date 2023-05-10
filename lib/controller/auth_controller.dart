@@ -7,6 +7,7 @@ import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:tricycall_thesis/pages/account_setting_page.dart';
+// ignore: depend_on_referenced_packages, library_prefixes
 import 'package:path/path.dart' as Path;
 
 import '../pages/home_page.dart';
@@ -89,6 +90,7 @@ class AuthController extends GetxController {
     TaskSnapshot taskSnapshot = await uploadTask.whenComplete(() => null);
     await taskSnapshot.ref.getDownloadURL().then((value) {
       imageUrl = value;
+      // ignore: avoid_print
       print("Download URL: $value");
     });
 

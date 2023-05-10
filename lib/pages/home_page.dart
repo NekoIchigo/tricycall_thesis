@@ -19,12 +19,13 @@ class _HomePageState extends State<HomePage> {
   );
 
   GoogleMapController? myMapController;
+  GlobalKey<ScaffoldState> scaffoldState = GlobalKey<ScaffoldState>();
 
   @override
   Widget build(BuildContext context) {
-    String test = "";
-    const kGoogleApiKey = "AIzaSyBFPJ9b4hwLh_CwUAPEe8aMIGT4deavGCk";
     return Scaffold(
+      key: scaffoldState,
+      drawer: buildDrawer(),
       body: Stack(
         alignment: Alignment.center,
         children: [
@@ -37,6 +38,22 @@ class _HomePageState extends State<HomePage> {
             onMapCreated: (GoogleMapController controller) {
               myMapController = controller;
             },
+          ),
+          Align(
+            alignment: Alignment.topLeft,
+            child: Padding(
+              padding: const EdgeInsets.only(top: 15.0, left: 15),
+              child: CircleAvatar(
+                radius: 20,
+                backgroundColor: Colors.green,
+                child: IconButton(
+                  icon: const Icon(Icons.menu, color: Colors.white),
+                  onPressed: () {
+                    scaffoldState.currentState?.openDrawer();
+                  },
+                ),
+              ),
+            ),
           ),
           Positioned(
             top: Get.height * .10,
@@ -92,7 +109,7 @@ class _HomePageState extends State<HomePage> {
         apiKey: kGoogleApiKey,
         mode: Mode.overlay, // Mode.fullscreen
         language: "en",
-        components: [new Component(Component.country, "ph")]);
+        components: [Component(Component.country, "ph")]);
 
     return p!.description!;
   }
@@ -295,6 +312,92 @@ class _HomePageState extends State<HomePage> {
                           ),
                         ],
                       ),
+                      child: Row(
+                        children: [
+                          Text(
+                            "Manila City",
+                            style: GoogleFonts.varelaRound(
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.black,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+                    Text(
+                      "Work address:",
+                      style: GoogleFonts.varelaRound(
+                        fontSize: 14,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.black,
+                      ),
+                    ),
+                    Container(
+                      width: Get.width,
+                      height: 50,
+                      padding: const EdgeInsets.symmetric(horizontal: 10),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(10),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.05),
+                            blurRadius: 10,
+                            spreadRadius: 4,
+                          ),
+                        ],
+                      ),
+                      child: Row(
+                        children: [
+                          Text(
+                            "Makati City",
+                            style: GoogleFonts.varelaRound(
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.black,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+                    InkWell(
+                      onTap: () async {
+                        Get.back();
+                        String place = await showGoogleAutoComplete();
+                        sourceController.text = place;
+                      },
+                      child: Container(
+                        width: Get.width,
+                        height: 50,
+                        padding: const EdgeInsets.symmetric(horizontal: 10),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(10),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.05),
+                              blurRadius: 10,
+                              spreadRadius: 4,
+                            ),
+                          ],
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Text(
+                              "Search for Address",
+                              style: GoogleFonts.varelaRound(
+                                fontSize: 12,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.black,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
                     ),
                   ],
                 ),
@@ -379,6 +482,117 @@ class _HomePageState extends State<HomePage> {
             ),
           ),
         ),
+      ),
+    );
+  }
+
+  buildDrawer() {
+    final List<String> items = [
+      "Ride History",
+      "Settings",
+      "Support",
+      "Log out"
+    ];
+
+    return Drawer(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            height: 150,
+            child: DrawerHeader(
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                mainAxisAlignment: MainAxisAlignment.spaceAround,
+                children: [
+                  Container(
+                    width: 70,
+                    height: 70,
+                    decoration: const BoxDecoration(
+                        shape: BoxShape.circle,
+                        image: DecorationImage(
+                          image: AssetImage(
+                              "assets/images/profile-placeholder.png"),
+                          fit: BoxFit.cover,
+                        )),
+                  ),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        "Good Morning",
+                        style: GoogleFonts.varelaRound(
+                          color: Colors.grey.shade600,
+                          fontSize: 14,
+                        ),
+                      ),
+                      Text(
+                        "Reydan John",
+                        style: GoogleFonts.varelaRound(
+                          fontSize: 24,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.black,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: 20),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            child: SingleChildScrollView(
+              child: SizedBox(
+                height: Get.height * 0.60,
+                child: ListView.builder(
+                  padding: const EdgeInsets.all(0),
+                  itemCount: items.length,
+                  itemBuilder: (context, index) {
+                    return ListTile(
+                      contentPadding: const EdgeInsets.all(0),
+                      dense: true,
+                      onTap: () {},
+                      title: Text(
+                        items[index],
+                        style: GoogleFonts.varelaRound(
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ),
+            ),
+          ),
+          const Divider(),
+          Padding(
+            padding: const EdgeInsets.symmetric(
+              vertical: 15,
+              horizontal: 20,
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  "Footer Here",
+                  style: GoogleFonts.varelaRound(
+                    color: Colors.grey,
+                  ),
+                ),
+                Text(
+                  "Copy Right \u00a9 TricyCall Team",
+                  style: GoogleFonts.varelaRound(
+                    color: Colors.grey,
+                  ),
+                ),
+              ],
+            ),
+          )
+        ],
       ),
     );
   }

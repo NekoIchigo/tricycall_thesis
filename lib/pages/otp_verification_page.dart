@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
-import 'package:tricycall_thesis/pages/login_page.dart';
-
 import '../controller/auth_controller.dart';
 import '../widgets/center_logo.dart';
 import '../widgets/otp_verification_widget.dart';
