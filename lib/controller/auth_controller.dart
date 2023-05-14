@@ -10,6 +10,7 @@ import 'package:tricycall_thesis/pages/account_setting_page.dart';
 // ignore: depend_on_referenced_packages, library_prefixes
 import 'package:path/path.dart' as Path;
 
+import '../models/user_model.dart';
 import '../pages/home_page.dart';
 
 class AuthController extends GetxController {
@@ -97,12 +98,17 @@ class AuthController extends GetxController {
     return imageUrl;
   }
 
-  storeUserInfo(File selectedImage, String firstName, String lastName,
-      String home, String work) async {
-    String url = await uploadImage(selectedImage);
+  storeUserInfo(File? selectedImage, String firstName, String lastName,
+      String home, String work,
+      {String? url = ""}) async {
+    String urlNew = url ?? "";
+    if (selectedImage != null) {
+      urlNew = await uploadImage(selectedImage);
+    }
+
     String uid = FirebaseAuth.instance.currentUser!.uid;
     FirebaseFirestore.instance.collection('users').doc(uid).set({
-      'image': url,
+      'image': urlNew,
       'first_name': firstName,
       'last_name': lastName,
       'home_address': home,
@@ -111,5 +117,16 @@ class AuthController extends GetxController {
       isProfileUploading(false);
       Get.to(() => const HomePage());
     });
+  }
+
+  var myUser = UserModel(null, null, null, null, null).obs;
+
+  getUserInfo() {
+    String uid = FirebaseAuth.instance.currentUser!.uid;
+    FirebaseFirestore.instance.collection('users').doc(uid).snapshots().listen(
+      (event) {
+        myUser.value = UserModel.fromJson(event.data()!);
+      },
+    );
   }
 }

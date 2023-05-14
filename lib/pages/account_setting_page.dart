@@ -38,7 +38,17 @@ class _AccountSettingPageState extends State<AccountSettingPage> {
   }
 
   @override
+  void initState() {
+    super.initState();
+    firstNameController.text = authController.myUser.value.firstName ?? "";
+    lastNameController.text = authController.myUser.value.lastName ?? "";
+    homeController.text = authController.myUser.value.homeAddress ?? "";
+    workController.text = authController.myUser.value.workAddress ?? "";
+  }
+
+  @override
   Widget build(BuildContext context) {
+    bool isUpdate = false;
     return Scaffold(
       body: SingleChildScrollView(
         child: Form(
@@ -80,21 +90,35 @@ class _AccountSettingPageState extends State<AccountSettingPage> {
                           getImage(ImageSource.gallery);
                         },
                         child: selectedImage == null
-                            ? Container(
-                                height: 120,
-                                width: 120,
-                                decoration: BoxDecoration(
-                                  shape: BoxShape.circle,
-                                  color: Colors.grey.shade400,
-                                ),
-                                child: const Center(
-                                  child: Icon(
-                                    Icons.camera_alt_outlined,
-                                    color: Colors.white,
-                                    size: 40,
-                                  ),
-                                ),
-                              )
+                            ? authController.myUser.value.image != null
+                                ? Container(
+                                    height: 120,
+                                    width: 120,
+                                    decoration: BoxDecoration(
+                                      image: DecorationImage(
+                                        image: NetworkImage(
+                                            authController.myUser.value.image!),
+                                        fit: BoxFit.cover,
+                                      ),
+                                      shape: BoxShape.circle,
+                                      color: Colors.grey.shade400,
+                                    ),
+                                  )
+                                : Container(
+                                    height: 120,
+                                    width: 120,
+                                    decoration: BoxDecoration(
+                                      shape: BoxShape.circle,
+                                      color: Colors.grey.shade400,
+                                    ),
+                                    child: const Center(
+                                      child: Icon(
+                                        Icons.camera_alt_outlined,
+                                        color: Colors.white,
+                                        size: 40,
+                                      ),
+                                    ),
+                                  )
                             : Container(
                                 height: 120,
                                 width: 120,
@@ -197,23 +221,21 @@ class _AccountSettingPageState extends State<AccountSettingPage> {
                               child: CircularProgressIndicator(),
                             )
                           : greenButton(
-                              "Submit",
+                              "Update",
                               () {
-                                if (!formKey.currentState!.validate()) {
-                                  return;
-                                }
-                                if (selectedImage == null) {
-                                  Get.snackbar(
-                                      "title", "Please add your image");
-                                  return;
-                                }
+                                // if (!formKey.currentState!.validate()) {
+                                //   return;
+                                // }
+
                                 authController.isProfileUploading(true);
                                 authController.storeUserInfo(
-                                    selectedImage!,
-                                    firstNameController.text,
-                                    lastNameController.text,
-                                    homeController.text,
-                                    workController.text);
+                                  selectedImage,
+                                  firstNameController.text,
+                                  lastNameController.text,
+                                  homeController.text,
+                                  workController.text,
+                                  url: authController.myUser.value.image,
+                                );
                               },
                             ),
                     ),
