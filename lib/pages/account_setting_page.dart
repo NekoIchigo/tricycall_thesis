@@ -5,7 +5,6 @@ import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:tricycall_thesis/controller/auth_controller.dart';
-import 'package:tricycall_thesis/widgets/center_logo.dart';
 import 'package:tricycall_thesis/widgets/input_text.dart';
 
 import '../widgets/green_button.dart';
@@ -49,7 +48,6 @@ class _AccountSettingPageState extends State<AccountSettingPage> {
 
   @override
   Widget build(BuildContext context) {
-    bool isUpdate = false;
     return Scaffold(
       body: SizedBox(
         height: Get.height,
