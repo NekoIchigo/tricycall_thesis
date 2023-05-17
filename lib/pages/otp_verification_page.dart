@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
+import 'package:tricycall_thesis/widgets/center_logo.dart';
+
 import '../controller/auth_controller.dart';
-import '../widgets/center_logo.dart';
 import '../widgets/otp_verification_widget.dart';
 
 class OtpVerificationPage extends StatefulWidget {
   final String phoneNumber;
-
   const OtpVerificationPage({
     Key? key,
     required this.phoneNumber,
@@ -29,42 +29,35 @@ class _OtpVerificationPageState extends State<OtpVerificationPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: SingleChildScrollView(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Stack(
-              children: [
-                centerLogo(),
-                Positioned(
-                  child: Container(
-                    margin: const EdgeInsets.all(20),
-                    width: 40,
-                    height: 40,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: Colors.green.shade300,
-                    ),
-                    child: Center(
-                      child: IconButton(
-                        onPressed: () {
-                          Get.back();
-                        },
-                        icon: const Icon(
-                          Icons.arrow_back_rounded,
-                          color: Colors.white,
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-              ],
+      body: Stack(
+        children: [
+          Positioned(
+            top: 40,
+            left: 20,
+            child: IconButton(
+              onPressed: () {
+                Get.back();
+              },
+              icon: const Icon(
+                Icons.arrow_back,
+                color: Colors.green,
+                size: 20,
+              ),
             ),
-            const SizedBox(height: 50),
-            otpVerificationWidget(),
-          ],
-        ),
+          ),
+          Positioned(
+            bottom: 0,
+            width: Get.width,
+            child: bottomGreen(
+              otpVerificationWidget(),
+            ),
+          ),
+          Positioned(
+            width: Get.width,
+            bottom: Get.height * 0.43,
+            child: centerLogo(),
+          )
+        ],
       ),
     );
   }

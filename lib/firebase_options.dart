@@ -67,6 +67,7 @@ class DefaultFirebaseOptions {
     messagingSenderId: '503233099147',
     projectId: 'tricycallthesis',
     storageBucket: 'tricycallthesis.appspot.com',
+    androidClientId: '503233099147-ffjofs5ueo6k3n4qhrfr37cvi8sbt3kk.apps.googleusercontent.com',
     iosClientId: '503233099147-i1mvmmhju2obj1c9m86qr5e2gdk21ttc.apps.googleusercontent.com',
     iosBundleId: 'com.reydan.tricycallThesis',
   );
@@ -77,6 +78,7 @@ class DefaultFirebaseOptions {
     messagingSenderId: '503233099147',
     projectId: 'tricycallthesis',
     storageBucket: 'tricycallthesis.appspot.com',
+    androidClientId: '503233099147-ffjofs5ueo6k3n4qhrfr37cvi8sbt3kk.apps.googleusercontent.com',
     iosClientId: '503233099147-i1mvmmhju2obj1c9m86qr5e2gdk21ttc.apps.googleusercontent.com',
     iosBundleId: 'com.reydan.tricycallThesis',
   );

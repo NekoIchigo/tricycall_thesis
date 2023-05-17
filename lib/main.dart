@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:tricycall_thesis/pages/login_page.dart';
+import 'package:tricycall_thesis/pages/splash_screen.dart';
 
 import 'controller/auth_controller.dart';
 import 'firebase_options.dart';

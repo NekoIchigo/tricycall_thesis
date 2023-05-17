@@ -5,22 +5,53 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_google_places/flutter_google_places.dart';
+// ignore: library_prefixes
+import 'package:geocoding/geocoding.dart' as geoCoding;
 import 'package:get/get.dart';
-import 'package:tricycall_thesis/pages/account_setting_page.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:google_maps_webservice/places.dart';
 // ignore: depend_on_referenced_packages, library_prefixes
 import 'package:path/path.dart' as Path;
+import 'package:tricycall_thesis/pages/account_setting_page.dart';
 
 import '../models/user_model.dart';
 import '../pages/home_page.dart';
+import '../pages/login_page.dart';
 
 class AuthController extends GetxController {
-  String userUid = "";
-  var verId = "";
+  String userUid = '';
+  var verId = '';
   int? resendTokenId;
   bool phoneAuthCheck = false;
   dynamic credentials;
 
   var isProfileUploading = false.obs;
+
+  bool isLoginAsDriver = false;
+
+  storeUserCard(String number, String expiry, String cvv, String name) async {
+    await FirebaseFirestore.instance
+        .collection('users')
+        .doc(FirebaseAuth.instance.currentUser!.uid)
+        .collection('cards')
+        .add({'name': name, 'number': number, 'cvv': cvv, 'expiry': expiry});
+
+    return true;
+  }
+
+  RxList userCards = [].obs;
+
+  getUserCards() {
+    FirebaseFirestore.instance
+        .collection('users')
+        .doc(FirebaseAuth.instance.currentUser!.uid)
+        .collection('cards')
+        .snapshots()
+        .listen((event) {
+      userCards.value = event.docs;
+    });
+  }
 
   phoneAuth(String phone) async {
     try {
@@ -33,52 +64,78 @@ class AuthController extends GetxController {
           credentials = credential;
           await FirebaseAuth.instance.signInWithCredential(credential);
         },
-        forceResendingToken: resendTokenId,
-        verificationFailed: (FirebaseAuthException e) {
-          log('Failed');
-          if (e.code == 'invalid-phone-number') {
-            debugPrint('The provide phone number is not valid.');
-          }
-        },
         codeSent: (String verificationId, int? resendToken) async {
           log('Code sent');
           verId = verificationId;
           resendTokenId = resendToken;
         },
-        codeAutoRetrievalTimeout: (String verificationid) {},
+        forceResendingToken: resendTokenId,
+        verificationFailed: (FirebaseAuthException e) {
+          log('Failed');
+          if (e.code == 'invalid-phone-number') {
+            debugPrint('The provided phone number is not valid.');
+          }
+        },
+        codeAutoRetrievalTimeout: (String verificationId) {},
       );
     } catch (e) {
-      log("Error ocured $e");
+      log("Error occured $e");
     }
   }
 
   verifyOtp(String otpNumber) async {
     log("Called");
-    PhoneAuthCredential credential = PhoneAuthProvider.credential(
-      verificationId: verId,
-      smsCode: otpNumber,
-    );
-    log("LoggedIn");
+    PhoneAuthCredential credential =
+        PhoneAuthProvider.credential(verificationId: verId, smsCode: otpNumber);
+
+    log("LogedIn");
 
     await FirebaseAuth.instance.signInWithCredential(credential).then((value) {
       decideRoute();
+    }).catchError((e) {
+      debugPrint("Error while sign In $e");
     });
   }
 
+  var isDecided = false;
+
   decideRoute() {
-    // Check user Login
+    if (isDecided) {
+      return;
+    }
+    isDecided = true;
+    debugPrint("called");
+
+    ///step 1- Check user login?
     User? user = FirebaseAuth.instance.currentUser;
 
     if (user != null) {
-      // Check is account setting is finish
+      /// step 2- Check whether user profile exists?
+
+      ///isLoginAsDriver == true means navigate it to the driver module
+
       FirebaseFirestore.instance
           .collection('users')
           .doc(user.uid)
           .get()
           .then((value) {
-        value.exists
-            ? Get.to(() => const HomePage())
-            : Get.to(() => const AccountSettingPage());
+        ///isLoginAsDriver == true means navigate it to driver module
+
+        if (isLoginAsDriver) {
+          if (value.exists) {
+            debugPrint("Driver Home Screen");
+          } else {
+            // Get.offAll(() => const DriverProfileSetup());
+          }
+        } else {
+          if (value.exists) {
+            Get.to(() => const HomePage());
+          } else {
+            Get.offAll(() => const AccountSettingPage());
+          }
+        }
+      }).catchError((e) {
+        debugPrint("Error while decideRoute is $e");
       });
     }
   }
@@ -86,47 +143,128 @@ class AuthController extends GetxController {
   uploadImage(File image) async {
     String imageUrl = '';
     String fileName = Path.basename(image.path);
-    var reference = FirebaseStorage.instance.ref().child('user/$fileName');
+    var reference = FirebaseStorage.instance
+        .ref()
+        .child('users/$fileName'); // Modify this path/string as your need
     UploadTask uploadTask = reference.putFile(image);
     TaskSnapshot taskSnapshot = await uploadTask.whenComplete(() => null);
-    await taskSnapshot.ref.getDownloadURL().then((value) {
-      imageUrl = value;
-      // ignore: avoid_print
-      print("Download URL: $value");
-    });
+    await taskSnapshot.ref.getDownloadURL().then(
+      (value) {
+        imageUrl = value;
+        debugPrint("Download URL: $value");
+      },
+    );
 
     return imageUrl;
   }
 
-  storeUserInfo(File? selectedImage, String firstName, String lastName,
-      String home, String work,
-      {String? url = ""}) async {
-    String urlNew = url ?? "";
+  storeUserInfo(
+    File? selectedImage,
+    String name,
+    String home,
+    String business,
+    String shop, {
+    String url = '',
+    LatLng? homeLatLng,
+    LatLng? businessLatLng,
+    LatLng? shoppingLatLng,
+  }) async {
+    String urlNew = url;
     if (selectedImage != null) {
       urlNew = await uploadImage(selectedImage);
     }
-
     String uid = FirebaseAuth.instance.currentUser!.uid;
     FirebaseFirestore.instance.collection('users').doc(uid).set({
       'image': urlNew,
-      'first_name': firstName,
-      'last_name': lastName,
+      'name': name,
       'home_address': home,
-      'work_address': work,
-    }).then((value) {
+      'business_address': business,
+      'shopping_address': shop,
+      'home_latlng': GeoPoint(homeLatLng!.latitude, homeLatLng.longitude),
+      'business_latlng':
+          GeoPoint(businessLatLng!.latitude, businessLatLng.longitude),
+      'shopping_latlng':
+          GeoPoint(shoppingLatLng!.latitude, shoppingLatLng.longitude),
+    }, SetOptions(merge: true)).then((value) {
       isProfileUploading(false);
+
       Get.to(() => const HomePage());
     });
   }
 
-  var myUser = UserModel(null, null, null, null, null).obs;
+  var myUser = UserModel().obs;
 
   getUserInfo() {
     String uid = FirebaseAuth.instance.currentUser!.uid;
-    FirebaseFirestore.instance.collection('users').doc(uid).snapshots().listen(
-      (event) {
-        myUser.value = UserModel.fromJson(event.data()!);
-      },
+    FirebaseFirestore.instance
+        .collection('users')
+        .doc(uid)
+        .snapshots()
+        .listen((event) {
+      myUser.value = UserModel.fromJson(event.data()!);
+    });
+  }
+
+  Future<Prediction?> showGoogleAutoComplete(BuildContext context) async {
+    Prediction? p = await PlacesAutocomplete.show(
+      offset: 0,
+      radius: 1000,
+      strictbounds: false,
+      region: "ph",
+      language: "en",
+      context: context,
+      mode: Mode.overlay,
+      apiKey: "AIzaSyBFPJ9b4hwLh_CwUAPEe8aMIGT4deavGCk",
+      components: [Component(Component.country, "ph")],
+      types: [],
+      hint: "Search City",
     );
+
+    return p;
+  }
+
+  Future<LatLng> buildLatLngFromAddress(String place) async {
+    List<geoCoding.Location> locations =
+        await geoCoding.locationFromAddress(place);
+    return LatLng(locations.first.latitude, locations.first.longitude);
+  }
+
+  // storeDriverProfile(
+  //   File? selectedImage,
+  //   String name,
+  //   String email, {
+  //   String url = '',
+  // }) async {
+  //   String urlNew = url;
+  //   if (selectedImage != null) {
+  //     urlNew = await uploadImage(selectedImage);
+  //   }
+  //   String uid = FirebaseAuth.instance.currentUser!.uid;
+  //   FirebaseFirestore.instance.collection('users').doc(uid).set(
+  //       {'image': urlNew, 'name': name, 'email': email, 'isDriver': true},
+  //       SetOptions(merge: true)).then((value) {
+  //     isProfileUploading(false);
+
+  //    Get.off(() => const CarRegistrationTemplate());
+  //   });
+  // }
+
+  // Future<bool> uploadCarEntry(Map<String, dynamic> carData) async {
+  //   bool isUploaded = false;
+  //   String uid = FirebaseAuth.instance.currentUser!.uid;
+
+  //   await FirebaseFirestore.instance
+  //       .collection('users')
+  //       .doc(uid)
+  //       .set(carData, SetOptions(merge: true));
+
+  //   isUploaded = true;
+
+  //   return isUploaded;
+  // }
+
+  signOut() async {
+    await FirebaseAuth.instance.signOut();
+    Get.off(() => const LoginPage());
   }
 }

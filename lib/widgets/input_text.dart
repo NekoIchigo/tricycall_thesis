@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 class InputText extends StatefulWidget {
@@ -35,37 +36,45 @@ class _InputTextState extends State<InputText> {
   @override
   Widget build(BuildContext context) {
     Color secondaryColor = Theme.of(context).colorScheme.secondary;
-    var bodyText = GoogleFonts.varelaRound(fontSize: 14);
+    var bodyText = GoogleFonts.varelaRound(
+      fontSize: 14,
+      color: Colors.black,
+    );
 
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 5.0),
-      child: TextFormField(
-        validator: (String? input) => widget.validator(input),
-        controller: widget.textController,
-        keyboardType: widget.keyboardtype,
-        obscureText: widget.isPassword ? _isObscure : false,
-        decoration: InputDecoration(
-          labelText: widget.label,
-          labelStyle: bodyText,
-          enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(10),
-            borderSide: const BorderSide(color: Colors.grey),
+      child: SizedBox(
+        width: Get.width * .8,
+        child: TextFormField(
+          validator: (String? input) => widget.validator(input),
+          controller: widget.textController,
+          keyboardType: widget.keyboardtype,
+          obscureText: widget.isPassword ? _isObscure : false,
+          decoration: InputDecoration(
+            labelText: widget.label,
+            labelStyle: bodyText,
+            filled: true,
+            fillColor: Colors.white,
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(10),
+              borderSide: const BorderSide(color: Colors.grey),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(10),
+              borderSide: BorderSide(color: secondaryColor),
+            ),
+            prefixIcon: widget.isPassword
+                ? InkWell(
+                    onTap: _togglePasswordView,
+                    child: Icon(
+                      _isObscure ? Icons.visibility : Icons.visibility_off,
+                      color: const Color(0xFF888888),
+                    ),
+                  )
+                : Icon(widget.icon, color: Colors.green.shade400),
           ),
-          focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(10),
-            borderSide: BorderSide(color: secondaryColor),
-          ),
-          prefixIcon: widget.isPassword
-              ? InkWell(
-                  onTap: _togglePasswordView,
-                  child: Icon(
-                    _isObscure ? Icons.visibility : Icons.visibility_off,
-                    color: const Color(0xFF888888),
-                  ),
-                )
-              : Icon(widget.icon, color: Colors.green.shade400),
+          style: bodyText,
         ),
-        style: bodyText,
       ),
     );
   }

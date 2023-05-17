@@ -30,10 +30,35 @@ dependencies:
   geolocator: ^9.0.2
   geocoding: ^2.1.0
   flutter_typeahead: ^4.3.8
+  flutter_launcher_icons: ^0.13.1
+  alt_sms_autofill: ^1.0.0
+  permission_handler: ^10.2.0
+  shared_preferences: ^2.1.1
+  flutter_polyline_points: ^1.0.0
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
+    
+flutter_launcher_icons:
+  android: "launcher_icon"
+  ios: true
+  image_path: "assets/images/logo.png"
+  background_color: "#ffffff"
+  theme_color: "#ffffff"
+  min_sdk_android: 21 # android min sdk min:16, default 21
+  web:
+    generate: true
+    image_path: "assets/images/logo.png"
+    background_color: "#ffffff"
+    theme_color: "#ffffff"
+  windows:
+    generate: true
+    image_path: "assets/images/logo.png"
+    icon_size: 48 # min:48, max:256, default: 48
+  macos:
+    generate: true
+    image_path: "assets/images/logo.png"
 
   flutter_lints: ^2.0.0
 

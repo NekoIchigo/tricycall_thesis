@@ -10,7 +10,7 @@ Widget textWidget({
     style: GoogleFonts.varelaRound(
       fontSize: fontSize,
       fontWeight: fontWeight,
-      color: Colors.black,
+      color: Colors.white,
     ),
     child: Text(text),
   );

@@ -1,49 +1,43 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:tricycall_thesis/widgets/pinput_widget.dart';
 import 'package:tricycall_thesis/widgets/text_widget.dart';
-
-import 'pinput_widget.dart';
 
 Widget otpVerificationWidget() {
   return Padding(
-    padding: const EdgeInsets.symmetric(horizontal: 20.0),
+    padding: const EdgeInsets.symmetric(horizontal: 20),
     child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+      crossAxisAlignment: CrossAxisAlignment.center,
       children: [
-        textWidget(text: "Phone Verification:"),
+        const SizedBox(height: 40),
+        textWidget(text: "Verify your phone number"),
         textWidget(
-          text: "Enter your OTP code below",
-          fontSize: 22,
-          fontWeight: FontWeight.bold,
-        ),
-        const SizedBox(
-          height: 40,
-        ),
+            text: "Enter the OTP Code below",
+            fontSize: 22,
+            fontWeight: FontWeight.bold),
+        const SizedBox(height: 40),
         SizedBox(
-          width: Get.width,
-          child: const RoundedWithCustomCursor(),
-        ),
+            width: Get.width, height: 50, child: const RoundedWithShadow()),
         const SizedBox(
           height: 40,
         ),
-        RichText(
-          textAlign: TextAlign.start,
-          text: TextSpan(
-            style: GoogleFonts.varelaRound(color: Colors.black, fontSize: 12),
-            children: [
-              const TextSpan(
-                text: "Resend code in: ",
-              ),
-              TextSpan(
-                text: "60 seconds",
-                style: GoogleFonts.varelaRound(
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ],
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20),
+          child: RichText(
+            textAlign: TextAlign.start,
+            text: TextSpan(
+                style: GoogleFonts.poppins(color: Colors.white, fontSize: 12),
+                children: [
+                  const TextSpan(
+                    text: "Resend Code: ",
+                  ),
+                  TextSpan(
+                      text: "10 seconds",
+                      style: GoogleFonts.poppins(fontWeight: FontWeight.bold)),
+                ]),
           ),
-        ),
+        )
       ],
     ),
   );

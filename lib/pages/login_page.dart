@@ -1,6 +1,7 @@
 import 'package:fl_country_code_picker/fl_country_code_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:tricycall_thesis/pages/otp_verification_page.dart';
 
 import '../widgets/center_logo.dart';
@@ -20,32 +21,59 @@ class _LoginPageState extends State<LoginPage> {
       const CountryCode(name: "Philippines", code: "PH", dialCode: "+63");
 
   onSubmit(String? input) {
-    Get.to(
-        () => OtpVerificationPage(phoneNumber: countryCode.dialCode + input!));
+    Get.to(() => OtpVerificationPage(
+          phoneNumber: countryCode.dialCode + input!,
+        ));
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: SizedBox(
-        height: Get.height,
-        width: Get.width,
-        child: SingleChildScrollView(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              centerLogo(),
-              const SizedBox(height: 50),
+      body: Stack(
+        children: [
+          Positioned(
+            width: Get.width,
+            bottom: 0,
+            child: bottomGreen(
               loginWidget(countryCode, () async {
                 final code = await countryPicker.showPicker(context: context);
                 // Null check
                 if (code != null) countryCode = code;
                 setState(() {});
               }, onSubmit),
-            ],
+            ),
+          ),
+          Positioned(
+            width: Get.width,
+            bottom: Get.height * .43,
+            child: centerLogo(),
+          ),
+          Positioned(
+            top: 40,
+            right: 15,
+            child: applyButton(),
+          ),
+        ],
+      ),
+    );
+  }
+
+  ElevatedButton applyButton() {
+    return ElevatedButton(
+      onPressed: () {},
+      style: ElevatedButton.styleFrom(
+        backgroundColor: Colors.white,
+        padding: EdgeInsets.all(15),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+          side: BorderSide(
+            color: Colors.green,
           ),
         ),
+      ),
+      child: Text(
+        "Apply as Driver",
+        style: GoogleFonts.varelaRound(fontSize: 12, color: Colors.green),
       ),
     );
   }

@@ -14,6 +14,14 @@
       },
       "oauth_client": [
         {
+          "client_id": "503233099147-f80r84l34h6e6b6nt6adj73j317ocsqb.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.reydan.tricycall_thesis",
+            "certificate_hash": "3fee16e84ed60f899af368828097c5b18239d73a"
+          }
+        },
+        {
           "client_id": "503233099147-4feknkpdfjgrgg1vgak9rdepjk5bet0b.apps.googleusercontent.com",
           "client_type": 3
         }
@@ -29,6 +37,13 @@
             {
               "client_id": "503233099147-4feknkpdfjgrgg1vgak9rdepjk5bet0b.apps.googleusercontent.com",
               "client_type": 3
+            },
+            {
+              "client_id": "503233099147-i1mvmmhju2obj1c9m86qr5e2gdk21ttc.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.reydan.tricycallThesis"
+              }
             }
           ]
         }

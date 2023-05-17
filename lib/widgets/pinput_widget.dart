@@ -2,113 +2,93 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:pinput/pinput.dart';
-import 'package:tricycall_thesis/controller/auth_controller.dart';
 
-class RoundedWithCustomCursor extends StatefulWidget {
-  const RoundedWithCustomCursor({Key? key}) : super(key: key);
+import '../controller/auth_controller.dart';
+
+class RoundedWithShadow extends StatefulWidget {
+  const RoundedWithShadow({super.key});
 
   @override
   // ignore: library_private_types_in_public_api
-  _RoundedWithCustomCursorState createState() =>
-      _RoundedWithCustomCursorState();
-
-  @override
-  String toStringShort() => 'Rounded With Cursor';
+  _RoundedWithShadowState createState() => _RoundedWithShadowState();
 }
 
-class _RoundedWithCustomCursorState extends State<RoundedWithCustomCursor> {
-  final pinController = TextEditingController();
+class _RoundedWithShadowState extends State<RoundedWithShadow> {
+  final controller = TextEditingController();
   final focusNode = FocusNode();
-  final formKey = GlobalKey<FormState>();
 
   AuthController authController = Get.find<AuthController>();
 
   @override
   void dispose() {
-    pinController.dispose();
+    controller.dispose();
     focusNode.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    const focusedBorderColor = Color.fromRGBO(23, 171, 144, 1);
-    const fillColor = Color.fromRGBO(243, 246, 249, 0);
-    const borderColor = Color.fromRGBO(23, 171, 144, 0.4);
-
     final defaultPinTheme = PinTheme(
-      width: 56,
-      height: 56,
+      width: 60,
+      height: 64,
       textStyle: GoogleFonts.poppins(
-        fontSize: 22,
-        color: const Color.fromRGBO(30, 60, 87, 1),
-      ),
+          fontSize: 20, color: const Color.fromRGBO(70, 69, 66, 1)),
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(19),
-        border: Border.all(color: borderColor),
+        color: const Color.fromRGBO(232, 235, 241, 0.37),
+        borderRadius: BorderRadius.circular(8),
       ),
     );
 
-    return Form(
-      key: formKey,
-      child: Column(
-        children: [
-          Directionality(
-            // Specify direction if desired
-            textDirection: TextDirection.ltr,
-            child: Pinput(
-              length: 6,
-              controller: pinController,
-              focusNode: focusNode,
-              androidSmsAutofillMethod:
-                  AndroidSmsAutofillMethod.smsUserConsentApi,
-              listenForMultipleSmsOnAndroid: true,
-              defaultPinTheme: defaultPinTheme,
-              // validator: (value) {
-              //   return value == '2222' ? null : 'Pin is incorrect';
-              // },
-              hapticFeedbackType: HapticFeedbackType.lightImpact,
-              onCompleted: (String input) {
-                authController.verifyOtp(input);
-              },
-              onChanged: (value) {
-                debugPrint('onChanged: $value');
-              },
-              cursor: Column(
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: [
-                  Container(
-                    margin: const EdgeInsets.only(bottom: 9),
-                    width: 22,
-                    height: 1,
-                    color: focusedBorderColor,
-                  ),
-                ],
-              ),
-              focusedPinTheme: defaultPinTheme.copyWith(
-                decoration: defaultPinTheme.decoration!.copyWith(
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: focusedBorderColor),
-                ),
-              ),
-              submittedPinTheme: defaultPinTheme.copyWith(
-                decoration: defaultPinTheme.decoration!.copyWith(
-                  color: fillColor,
-                  borderRadius: BorderRadius.circular(19),
-                  border: Border.all(color: focusedBorderColor),
-                ),
-              ),
-              errorPinTheme: defaultPinTheme.copyBorderWith(
-                border: Border.all(color: Colors.redAccent),
-              ),
-            ),
-          ),
-          // TextButton(
-          //   onPressed: () => formKey.currentState!.validate(),
-          //   child: const Text('Validate'),
-          // ),
-        ],
+    final cursor = Align(
+      alignment: Alignment.bottomCenter,
+      child: Container(
+        width: 21,
+        height: 1,
+        margin: const EdgeInsets.only(bottom: 12),
+        decoration: BoxDecoration(
+          color: const Color.fromRGBO(137, 146, 160, 1),
+          borderRadius: BorderRadius.circular(8),
+        ),
       ),
+    );
+
+    return Pinput(
+      length: 6,
+      controller: controller,
+      focusNode: focusNode,
+      onCompleted: (String input) {
+        authController.isDecided = false;
+        authController.verifyOtp(input);
+      },
+      defaultPinTheme: defaultPinTheme.copyWith(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(8),
+          boxShadow: const [
+            BoxShadow(
+              color: Color.fromRGBO(0, 0, 0, 0.05999999865889549),
+              offset: Offset(0, 3),
+              blurRadius: 16,
+            )
+          ],
+        ),
+      ),
+      separator: const SizedBox(width: 10),
+      focusedPinTheme: defaultPinTheme.copyWith(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(8),
+          boxShadow: const [
+            BoxShadow(
+              color: Color.fromRGBO(0, 0, 0, 0.05999999865889549),
+              offset: Offset(0, 3),
+              blurRadius: 16,
+            )
+          ],
+        ),
+      ),
+      showCursor: true,
+      cursor: cursor,
     );
   }
 }
