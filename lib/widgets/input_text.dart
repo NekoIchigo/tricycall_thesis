@@ -63,7 +63,7 @@ class _InputTextState extends State<InputText> {
               borderRadius: BorderRadius.circular(10),
               borderSide: BorderSide(color: secondaryColor),
             ),
-            prefixIcon: widget.isPassword
+            suffixIcon: widget.isPassword
                 ? InkWell(
                     onTap: _togglePasswordView,
                     child: Icon(

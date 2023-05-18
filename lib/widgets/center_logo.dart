@@ -11,7 +11,7 @@ Widget centerLogo() {
           fit: BoxFit.fitHeight,
         ),
       ),
-      SizedBox(height: 35),
+      const SizedBox(height: 35),
       Center(
         child: Image.asset(
           "assets/images/tricycle_icon.png",

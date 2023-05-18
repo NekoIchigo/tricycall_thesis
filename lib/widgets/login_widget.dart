@@ -91,7 +91,7 @@ Widget loginWidget(
                         backgroundColor: Colors.red.shade200)
                     : onSubmit(phoneNumberController.text);
               },
-              icon: Icon(Icons.navigate_next),
+              icon: const Icon(Icons.navigate_next),
             ),
           ]),
         ),

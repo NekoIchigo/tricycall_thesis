@@ -65,14 +65,23 @@ class _AccountSettingPageState extends State<AccountSettingPage> {
                 child: Container(
                   width: Get.width,
                   height: Get.height * .70,
-                  padding: EdgeInsets.all(10),
+                  padding: const EdgeInsets.all(10),
                   decoration: const BoxDecoration(
                     color: Color(0xFF00bf63),
                     borderRadius: BorderRadius.vertical(
                       top: Radius.circular(150),
                     ),
                   ),
-                  child: inputSections(),
+                  child: Column(
+                    children: [
+                      SizedBox(
+                        height: Get.height * .18,
+                      ),
+                      SingleChildScrollView(
+                        child: inputSections(),
+                      ),
+                    ],
+                  ),
                 ),
               ),
               Positioned(
@@ -91,67 +100,112 @@ class _AccountSettingPageState extends State<AccountSettingPage> {
     );
   }
 
-  Column inputSections() {
+  Widget inputSections() {
     return Column(
       children: [
-        SizedBox(height: 150),
-        InputText(
-          textController: firstNameController,
-          label: "First Name",
-          icon: Icons.abc_rounded,
-          isPassword: false,
-          keyboardtype: TextInputType.text,
-          validator: (String? input) {
-            if (input!.isEmpty) {
-              return "A Field is Empty!";
-            }
-            if (input.length < 2) {
-              return "First Name is must be more than 2 characters";
-            }
-          },
-        ),
-        const SizedBox(
-          height: 10,
-        ),
-        InputText(
-          textController: lastNameController,
-          label: "Last Name",
-          icon: Icons.abc_rounded,
-          isPassword: false,
-          keyboardtype: TextInputType.text,
-          validator: (String? input) {
-            if (input!.isEmpty) {
-              return "A Field is Empty!";
-            }
-            if (input.length < 2) {
-              return "First Name is must be more than 2 characters";
-            }
-          },
-        ),
-        const SizedBox(
-          height: 10,
-        ),
-        InputText(
-          textController: homeController,
-          label: "Home Address(Optional)",
-          icon: Icons.home_rounded,
-          isPassword: false,
-          keyboardtype: TextInputType.text,
-          validator: (String? input) {},
-        ),
-        const SizedBox(
-          height: 10,
-        ),
-        InputText(
-          textController: workController,
-          label: "Work Address(Optional)",
-          icon: Icons.work,
-          isPassword: false,
-          keyboardtype: TextInputType.text,
-          validator: (String? input) {},
-        ),
-        const SizedBox(
-          height: 20,
+        SizedBox(
+          height: Get.height * .40,
+          child: SingleChildScrollView(
+            scrollDirection: Axis.vertical,
+            child: Column(
+              children: [
+                InputText(
+                  textController: firstNameController,
+                  label: "First Name",
+                  icon: Icons.abc_rounded,
+                  isPassword: false,
+                  keyboardtype: TextInputType.text,
+                  validator: (String? input) {
+                    if (input!.isEmpty) {
+                      return "A Field is Empty!";
+                    }
+                    if (input.length < 2) {
+                      return "First Name is must be more than 2 characters";
+                    }
+                  },
+                ),
+                const SizedBox(
+                  height: 10,
+                ),
+                InputText(
+                  textController: lastNameController,
+                  label: "Last Name",
+                  icon: Icons.abc_rounded,
+                  isPassword: false,
+                  keyboardtype: TextInputType.text,
+                  validator: (String? input) {
+                    if (input!.isEmpty) {
+                      return "A Field is Empty!";
+                    }
+                    if (input.length < 2) {
+                      return "First Name is must be more than 2 characters";
+                    }
+                  },
+                ),
+                const SizedBox(
+                  height: 10,
+                ),
+                InputText(
+                  textController: lastNameController,
+                  label: "Email",
+                  icon: Icons.email_rounded,
+                  isPassword: false,
+                  keyboardtype: TextInputType.text,
+                  validator: (String? input) {
+                    if (input!.isEmpty) {
+                      return "A Field is Empty!";
+                    }
+                    if (input.length < 2) {
+                      return "First Name is must be more than 2 characters";
+                    }
+                  },
+                ),
+                const SizedBox(
+                  height: 10,
+                ),
+                InputText(
+                  textController: lastNameController,
+                  label: "Emergency Email",
+                  icon: Icons.abc_rounded,
+                  isPassword: false,
+                  keyboardtype: TextInputType.text,
+                  validator: (String? input) {
+                    // if (input!.isEmpty) {
+                    //   return "A Field is Empty!";
+                    // }
+                    // if (input.length < 2) {
+                    //   return "First Name is must be more than 2 characters";
+                    // }
+                  },
+                ),
+                const SizedBox(
+                  height: 10,
+                ),
+                InputText(
+                  textController: homeController,
+                  label: "Home Address(Optional)",
+                  icon: Icons.home_rounded,
+                  isPassword: false,
+                  keyboardtype: TextInputType.text,
+                  validator: (String? input) {},
+                ),
+                const SizedBox(
+                  height: 10,
+                ),
+                InputText(
+                  textController: workController,
+                  label: "Work Address(Optional)",
+                  icon: Icons.work,
+                  isPassword: false,
+                  keyboardtype: TextInputType.text,
+                  validator: (String? input) {},
+                ),
+                const SizedBox(
+                  height: 20,
+                ),
+              ],
+            ),
+          ),
         ),
         Obx(
           () => authController.isProfileUploading.value
@@ -193,22 +247,53 @@ class _AccountSettingPageState extends State<AccountSettingPage> {
         InkWell(
           onTap: () {
             Get.defaultDialog(
-              title: "Upload Profile Picture:",
+              title: "Upload Profile Picture",
+              titleStyle: GoogleFonts.varelaRound(
+                  color: Colors.green,
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold),
+              titlePadding: const EdgeInsets.all(20),
               content: Column(
                 children: [
-                  OutlinedButton(
-                    onPressed: () {
-                      getImage(ImageSource.camera);
-                      Get.back();
-                    },
-                    child: Text("From Camera"),
+                  SizedBox(
+                    width: Get.width * .50,
+                    child: OutlinedButton(
+                      style: OutlinedButton.styleFrom(
+                        backgroundColor: Colors.green,
+                      ),
+                      onPressed: () {
+                        getImage(ImageSource.camera);
+                        Get.back();
+                      },
+                      child: Text(
+                        "From Camera",
+                        style: GoogleFonts.varelaRound(
+                          color: Colors.white,
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
                   ),
-                  OutlinedButton(
-                    onPressed: () {
-                      getImage(ImageSource.gallery);
-                      Get.back();
-                    },
-                    child: Text("From Files"),
+                  SizedBox(
+                    width: Get.width * .50,
+                    child: OutlinedButton(
+                      style: OutlinedButton.styleFrom(
+                        backgroundColor: Colors.green,
+                      ),
+                      onPressed: () {
+                        getImage(ImageSource.gallery);
+                        Get.back();
+                      },
+                      child: Text(
+                        "From Files",
+                        style: GoogleFonts.varelaRound(
+                          color: Colors.white,
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
                   ),
                 ],
               ),
@@ -257,7 +342,7 @@ class _AccountSettingPageState extends State<AccountSettingPage> {
                   ),
                 ),
         ),
-        SizedBox(height: 20),
+        const SizedBox(height: 20),
         Text(
           "Profile",
           style: GoogleFonts.varelaRound(

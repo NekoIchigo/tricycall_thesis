@@ -2,6 +2,7 @@ import 'package:fl_country_code_picker/fl_country_code_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:tricycall_thesis/pages/driver/driver_application_page.dart';
 import 'package:tricycall_thesis/pages/otp_verification_page.dart';
 
 import '../widgets/center_logo.dart';
@@ -49,7 +50,7 @@ class _LoginPageState extends State<LoginPage> {
             child: centerLogo(),
           ),
           Positioned(
-            top: 40,
+            bottom: Get.height * .88,
             right: 15,
             child: applyButton(),
           ),
@@ -60,13 +61,15 @@ class _LoginPageState extends State<LoginPage> {
 
   ElevatedButton applyButton() {
     return ElevatedButton(
-      onPressed: () {},
+      onPressed: () {
+        Get.to(() => const DriverApplicationPage());
+      },
       style: ElevatedButton.styleFrom(
         backgroundColor: Colors.white,
-        padding: EdgeInsets.all(15),
+        padding: const EdgeInsets.all(15),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(20),
-          side: BorderSide(
+          side: const BorderSide(
             color: Colors.green,
           ),
         ),

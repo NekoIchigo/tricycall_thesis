@@ -3,7 +3,6 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:permission_handler/permission_handler.dart';
-import 'package:tricycall_thesis/pages/home_page.dart';
 
 import 'login_page.dart';
 
@@ -16,8 +15,8 @@ class SplashScreen extends StatefulWidget {
 
 class _SplashScreenState extends State<SplashScreen> {
   startTimer() {
-    Timer(Duration(seconds: 10), () {
-      Get.to(() => LoginPage());
+    Timer(const Duration(seconds: 10), () {
+      Get.to(() => const LoginPage());
     });
   }
 
@@ -26,7 +25,7 @@ class _SplashScreenState extends State<SplashScreen> {
       Permission.location,
       Permission.storage,
     ].request();
-    print(statuses[Permission.location]);
+    debugPrint(statuses[Permission.location] as String?);
   }
 
   @override
@@ -48,8 +47,8 @@ class _SplashScreenState extends State<SplashScreen> {
               height: Get.height * 0.40,
               fit: BoxFit.cover,
             ),
-            SizedBox(height: 50),
-            CircularProgressIndicator(),
+            const SizedBox(height: 50),
+            const CircularProgressIndicator(),
           ],
         ),
       ),
