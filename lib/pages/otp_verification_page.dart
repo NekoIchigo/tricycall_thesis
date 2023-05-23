@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'package:timer_count_down/timer_controller.dart';
+import 'package:timer_count_down/timer_count_down.dart';
 
 import 'package:tricycall_thesis/widgets/center_logo.dart';
 
@@ -19,6 +22,8 @@ class OtpVerificationPage extends StatefulWidget {
 
 class _OtpVerificationPageState extends State<OtpVerificationPage> {
   AuthController authController = Get.find<AuthController>();
+  bool canResend = false;
+  final CountdownController _controller = CountdownController(autoStart: true);
 
   @override
   void initState() {
@@ -48,10 +53,59 @@ class _OtpVerificationPageState extends State<OtpVerificationPage> {
           Positioned(
             bottom: 0,
             width: Get.width,
-            child: bottomGreen(
-              otpVerificationWidget(),
+            child: Column(
+              children: [
+                bottomGreen(
+                  otpVerificationWidget(),
+                ),
+              ],
             ),
           ),
+          Positioned(
+              bottom: Get.height * .15,
+              width: Get.width,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    "Resend Code ",
+                    style: GoogleFonts.varelaRound(
+                      fontSize: 12,
+                      color: Colors.white,
+                    ),
+                  ),
+                  InkWell(
+                    onTap: () {
+                      canResend
+                          ? authController.phoneAuth(widget.phoneNumber)
+                          : null;
+
+                      _controller.restart();
+                      setState(() {
+                        canResend = false;
+                      });
+                    },
+                    child: Countdown(
+                      controller: _controller,
+                      seconds: 30,
+                      build: (BuildContext context, double time) {
+                        return Text(
+                            canResend ? "Tap here" : time.toStringAsFixed(0),
+                            style: GoogleFonts.varelaRound(
+                              fontSize: 12,
+                              color: Colors.white,
+                            ));
+                      },
+                      interval: const Duration(seconds: 1),
+                      onFinished: () {
+                        setState(() {
+                          canResend = true;
+                        });
+                      },
+                    ),
+                  )
+                ],
+              )),
           Positioned(
             width: Get.width,
             bottom: Get.height * 0.43,

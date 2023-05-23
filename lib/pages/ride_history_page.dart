@@ -91,106 +91,107 @@ class _RideHistoryState extends State<RideHistory> {
                 trailing: const Icon(Icons.navigate_next_rounded),
                 onTap: () {
                   Get.defaultDialog(
-                      title: "RIDE HISTORY",
-                      titleStyle: GoogleFonts.varelaRound(
-                          color: Colors.black, fontWeight: FontWeight.bold),
-                      content: Column(
-                        children: [
-                          Text(
-                            "PICK UP LOCATION",
-                            style: GoogleFonts.varelaRound(
-                                color: Colors.black,
-                                fontSize: 14,
-                                fontWeight: FontWeight.bold),
-                          ),
-                          Text(
-                            "DROP OFF LOCATION",
-                            style: GoogleFonts.varelaRound(
-                                color: Colors.black,
-                                fontSize: 14,
-                                fontWeight: FontWeight.bold),
-                          ),
-                          const SizedBox(height: 15),
-                          Row(
-                            children: [
-                              Text(
-                                "Date Time: ",
-                                style: GoogleFonts.varelaRound(
-                                    color: Colors.black,
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.bold),
-                              ),
-                              const Expanded(child: SizedBox()),
-                              Text(
-                                "MAY 17 2023, 9:20 AM",
-                                style: GoogleFonts.varelaRound(
-                                    color: Colors.black,
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.bold),
-                              )
-                            ],
-                          ),
-                          const SizedBox(height: 5),
-                          Row(
-                            children: [
-                              Text(
-                                "Amount: ",
-                                style: GoogleFonts.varelaRound(
-                                    color: Colors.black,
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.bold),
-                              ),
-                              const Expanded(child: SizedBox()),
-                              Image.asset(
-                                "assets/images/peso_icon.png",
-                                width: 12,
-                                fit: BoxFit.cover,
-                              ),
-                              Text(
-                                "250",
-                                style: GoogleFonts.varelaRound(
-                                    color: Colors.black,
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.bold),
-                              )
-                            ],
-                          ),
-                          const SizedBox(height: 10),
-                          Container(
-                            width: Get.width,
-                            height: 3,
-                            color: Colors.green,
-                          ),
-                          const SizedBox(height: 15),
-                          Text(
-                            "DRIVER NAME",
-                            style: GoogleFonts.varelaRound(
-                                color: Colors.black,
-                                fontSize: 14,
-                                fontWeight: FontWeight.bold),
-                          ),
-                        ],
-                      ),
-                      confirm: Container(
-                        width: Get.width * .75,
-                        padding: const EdgeInsets.only(bottom: 20),
-                        margin: const EdgeInsets.symmetric(horizontal: 20),
-                        child: ElevatedButton(
-                          onPressed: () {
-                            Get.back();
-                          },
-                          style: ElevatedButton.styleFrom(
-                              shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(20))),
-                          child: Text(
-                            "OKAY",
-                            style: GoogleFonts.varelaRound(
-                              fontWeight: FontWeight.bold,
-                              color: Colors.white,
+                    title: "RIDE HISTORY",
+                    titleStyle: GoogleFonts.varelaRound(
+                        color: Colors.black, fontWeight: FontWeight.bold),
+                    content: Column(
+                      children: [
+                        Text(
+                          "PICK UP LOCATION",
+                          style: GoogleFonts.varelaRound(
+                              color: Colors.black,
+                              fontSize: 14,
+                              fontWeight: FontWeight.bold),
+                        ),
+                        Text(
+                          "DROP OFF LOCATION",
+                          style: GoogleFonts.varelaRound(
+                              color: Colors.black,
+                              fontSize: 14,
+                              fontWeight: FontWeight.bold),
+                        ),
+                        const SizedBox(height: 15),
+                        Row(
+                          children: [
+                            Text(
+                              "Date Time: ",
+                              style: GoogleFonts.varelaRound(
+                                  color: Colors.black,
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.bold),
                             ),
+                            const Expanded(child: SizedBox()),
+                            Text(
+                              "MAY 17 2023, 9:20 AM",
+                              style: GoogleFonts.varelaRound(
+                                  color: Colors.black,
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.bold),
+                            )
+                          ],
+                        ),
+                        const SizedBox(height: 5),
+                        Row(
+                          children: [
+                            Text(
+                              "Amount: ",
+                              style: GoogleFonts.varelaRound(
+                                  color: Colors.black,
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.bold),
+                            ),
+                            const Expanded(child: SizedBox()),
+                            Image.asset(
+                              "assets/images/peso_icon.png",
+                              width: 12,
+                              fit: BoxFit.cover,
+                            ),
+                            Text(
+                              "250",
+                              style: GoogleFonts.varelaRound(
+                                  color: Colors.black,
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.bold),
+                            )
+                          ],
+                        ),
+                        const SizedBox(height: 10),
+                        Container(
+                          width: Get.width,
+                          height: 3,
+                          color: Colors.green,
+                        ),
+                        const SizedBox(height: 15),
+                        Text(
+                          "DRIVER NAME",
+                          style: GoogleFonts.varelaRound(
+                              color: Colors.black,
+                              fontSize: 14,
+                              fontWeight: FontWeight.bold),
+                        ),
+                      ],
+                    ),
+                    confirm: Container(
+                      width: Get.width * .75,
+                      padding: const EdgeInsets.only(bottom: 20),
+                      margin: const EdgeInsets.symmetric(horizontal: 20),
+                      child: ElevatedButton(
+                        onPressed: () {
+                          Get.back();
+                        },
+                        style: ElevatedButton.styleFrom(
+                            shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(20))),
+                        child: Text(
+                          "OKAY",
+                          style: GoogleFonts.varelaRound(
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
                           ),
                         ),
-                      ));
+                      ),
+                    ),
+                  );
                 },
               );
             },

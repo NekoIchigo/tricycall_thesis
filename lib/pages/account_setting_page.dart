@@ -4,9 +4,9 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:tricycall_thesis/controller/auth_controller.dart';
 import 'package:tricycall_thesis/widgets/input_text.dart';
 
+import '../controller/passenger_controller.dart';
 import '../widgets/green_button.dart';
 
 class AccountSettingPage extends StatefulWidget {
@@ -21,10 +21,12 @@ class _AccountSettingPageState extends State<AccountSettingPage> {
   TextEditingController lastNameController = TextEditingController();
   TextEditingController homeController = TextEditingController();
   TextEditingController workController = TextEditingController();
+  TextEditingController emailController = TextEditingController();
+  TextEditingController emergencyEmailController = TextEditingController();
 
   GlobalKey<FormState> formKey = GlobalKey<FormState>();
 
-  AuthController authController = Get.find<AuthController>();
+  PassengerController pasengerController = Get.find<PassengerController>();
 
   final ImagePicker _picker = ImagePicker();
   File? selectedImage;
@@ -40,10 +42,13 @@ class _AccountSettingPageState extends State<AccountSettingPage> {
   @override
   void initState() {
     super.initState();
-    firstNameController.text = authController.myUser.value.firstName ?? "";
-    lastNameController.text = authController.myUser.value.lastName ?? "";
-    homeController.text = authController.myUser.value.homeAddress ?? "";
-    workController.text = authController.myUser.value.workAddress ?? "";
+    firstNameController.text = pasengerController.myUser.value.firstName ?? "";
+    lastNameController.text = pasengerController.myUser.value.lastName ?? "";
+    emailController.text = pasengerController.myUser.value.email ?? "";
+    emergencyEmailController.text =
+        pasengerController.myUser.value.emergencyEmail ?? "";
+    homeController.text = pasengerController.myUser.value.homeAddress ?? "";
+    workController.text = pasengerController.myUser.value.workAddress ?? "";
   }
 
   @override
@@ -120,7 +125,7 @@ class _AccountSettingPageState extends State<AccountSettingPage> {
                       return "A Field is Empty!";
                     }
                     if (input.length < 2) {
-                      return "First Name is must be more than 2 characters";
+                      return "This Field must be more than 2 characters";
                     }
                   },
                 ),
@@ -138,7 +143,7 @@ class _AccountSettingPageState extends State<AccountSettingPage> {
                       return "A Field is Empty!";
                     }
                     if (input.length < 2) {
-                      return "First Name is must be more than 2 characters";
+                      return "This Field must be more than 2 characters";
                     }
                   },
                 ),
@@ -146,7 +151,7 @@ class _AccountSettingPageState extends State<AccountSettingPage> {
                   height: 10,
                 ),
                 InputText(
-                  textController: lastNameController,
+                  textController: emailController,
                   label: "Email",
                   icon: Icons.email_rounded,
                   isPassword: false,
@@ -155,8 +160,8 @@ class _AccountSettingPageState extends State<AccountSettingPage> {
                     if (input!.isEmpty) {
                       return "A Field is Empty!";
                     }
-                    if (input.length < 2) {
-                      return "First Name is must be more than 2 characters";
+                    if (input.length < 5) {
+                      return "This Field must be more than 5 characters";
                     }
                   },
                 ),
@@ -164,7 +169,7 @@ class _AccountSettingPageState extends State<AccountSettingPage> {
                   height: 10,
                 ),
                 InputText(
-                  textController: lastNameController,
+                  textController: emergencyEmailController,
                   label: "Emergency Email",
                   icon: Icons.abc_rounded,
                   isPassword: false,
@@ -208,7 +213,7 @@ class _AccountSettingPageState extends State<AccountSettingPage> {
           ),
         ),
         Obx(
-          () => authController.isProfileUploading.value
+          () => pasengerController.isProfileUploading.value
               ? const Center(
                   child: CircularProgressIndicator(),
                 )
@@ -222,16 +227,21 @@ class _AccountSettingPageState extends State<AccountSettingPage> {
                         // if (!formKey.currentState!.validate()) {
                         //   return;
                         // }
-
-                        authController.isProfileUploading(true);
-                        authController.storeUserInfo(
-                          selectedImage,
-                          firstNameController.text,
-                          lastNameController.text,
-                          homeController.text,
-                          workController.text,
-                          url: authController.myUser.value.image!,
-                        );
+                        if (selectedImage == null) {
+                          Get.snackbar("Image empty", "Please insert image");
+                        } else {
+                          pasengerController.isProfileUploading(true);
+                          pasengerController.storeUserInfo(
+                            selectedImage,
+                            firstNameController.text,
+                            lastNameController.text,
+                            emailController.text,
+                            emergencyEmailController.text,
+                            homeController.text,
+                            workController.text,
+                            url: pasengerController.myUser.value.image,
+                          );
+                        }
                       },
                     ),
                   ),
@@ -300,14 +310,14 @@ class _AccountSettingPageState extends State<AccountSettingPage> {
             );
           },
           child: selectedImage == null
-              ? authController.myUser.value.image != null
+              ? pasengerController.myUser.value.image != null
                   ? Container(
                       height: 120,
                       width: 120,
                       decoration: BoxDecoration(
                         image: DecorationImage(
-                          image:
-                              NetworkImage(authController.myUser.value.image!),
+                          image: NetworkImage(
+                              pasengerController.myUser.value.image!),
                           fit: BoxFit.cover,
                         ),
                         shape: BoxShape.circle,

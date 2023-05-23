@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:tricycall_thesis/widgets/pinput_widget.dart';
 import 'package:tricycall_thesis/widgets/text_widget.dart';
 
@@ -22,22 +21,6 @@ Widget otpVerificationWidget() {
         const SizedBox(
           height: 40,
         ),
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 20),
-          child: RichText(
-            textAlign: TextAlign.start,
-            text: TextSpan(
-                style: GoogleFonts.poppins(color: Colors.white, fontSize: 12),
-                children: [
-                  const TextSpan(
-                    text: "Resend Code: ",
-                  ),
-                  TextSpan(
-                      text: "10 seconds",
-                      style: GoogleFonts.poppins(fontWeight: FontWeight.bold)),
-                ]),
-          ),
-        )
       ],
     ),
   );

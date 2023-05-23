@@ -1,13 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:tricycall_thesis/controller/auth_controller.dart';
 
-AuthController authController = Get.find<AuthController>();
+import '../controller/passenger_controller.dart';
+
+PassengerController pasengerController = Get.find<PassengerController>();
 
 Widget buildProfileTile() {
   return Obx(
-    () => authController.myUser.value.firstName == null
+    () => pasengerController.myUser.value.firstName == null
         ? const Center(
             child: CircularProgressIndicator(),
           )
@@ -32,7 +33,7 @@ Widget buildProfileTile() {
                   height: 50,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    image: authController.myUser.value.image == null
+                    image: pasengerController.myUser.value.image == null
                         ? const DecorationImage(
                             image: AssetImage(
                               "assets/images/profile-placeholder.png",
@@ -41,7 +42,7 @@ Widget buildProfileTile() {
                           )
                         : DecorationImage(
                             image: NetworkImage(
-                                authController.myUser.value.image!),
+                                pasengerController.myUser.value.image!),
                             fit: BoxFit.cover),
                   ),
                 ),
@@ -62,8 +63,8 @@ Widget buildProfileTile() {
                             ),
                           ),
                           TextSpan(
-                            text:
-                                authController.myUser.value.firstName ?? "User",
+                            text: pasengerController.myUser.value.firstName ??
+                                "User",
                             style: GoogleFonts.varelaRound(
                               fontSize: 14,
                               color: Colors.green,

@@ -5,16 +5,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import 'package:flutter_polyline_points/flutter_polyline_points.dart';
-import 'package:loading_animation_widget/loading_animation_widget.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:tricycall_thesis/pages/driver_found_page.dart';
-import 'package:tricycall_thesis/pages/select_locations_page.dart';
-
-import 'package:group_radio_button/group_radio_button.dart';
 
 import '../../controller/auth_controller.dart';
 import 'driver_drawer.dart';
@@ -26,6 +21,7 @@ class BookFoundPage extends StatefulWidget {
   State<BookFoundPage> createState() => _BookFoundPageState();
 }
 
+// TODO : Draw polyline
 class _BookFoundPageState extends State<BookFoundPage> {
   final googleApiKey = "AIzaSyBFPJ9b4hwLh_CwUAPEe8aMIGT4deavGCk";
   AuthController authController = Get.find<AuthController>();
@@ -42,38 +38,7 @@ class _BookFoundPageState extends State<BookFoundPage> {
       destinationIcon = BitmapDescriptor.defaultMarker,
       currentLocIcon = BitmapDescriptor.defaultMarker;
 
-  Future<bool> _handleLocationPermission() async {
-    bool serviceEnabled;
-    LocationPermission permission;
-
-    serviceEnabled = await Geolocator.isLocationServiceEnabled();
-    if (!serviceEnabled) {
-      Get.snackbar("Permission Error",
-          "Location services are disabled. Please enable the services");
-
-      return false;
-    }
-    permission = await Geolocator.checkPermission();
-    if (permission == LocationPermission.denied) {
-      permission = await Geolocator.requestPermission();
-      if (permission == LocationPermission.denied) {
-        Get.snackbar("Permission Error", "Location permissions are denied");
-
-        return false;
-      }
-    }
-    if (permission == LocationPermission.deniedForever) {
-      Get.snackbar("Permission Error",
-          "Location permissions are permanently denied, we cannot request permissions.");
-
-      return false;
-    }
-    return true;
-  }
-
   Future<void> _getCurrentPosition() async {
-    final hasPermission = await _handleLocationPermission();
-    if (!hasPermission) return;
     await Geolocator.getCurrentPosition(desiredAccuracy: LocationAccuracy.high)
         .then((Position position) async {
       setState(() {
@@ -177,9 +142,7 @@ class _BookFoundPageState extends State<BookFoundPage> {
   @override
   initState() {
     super.initState();
-    _handleLocationPermission();
     _getCurrentPosition();
-    // trackLoc();
     setCustomMarkerIcon();
     // getPaymentMethod();
     setPolyPoint();

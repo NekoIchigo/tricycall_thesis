@@ -3,8 +3,9 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
-import 'login_page.dart';
+import '../controller/auth_controller.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -14,25 +15,30 @@ class SplashScreen extends StatefulWidget {
 }
 
 class _SplashScreenState extends State<SplashScreen> {
-  startTimer() {
-    Timer(const Duration(seconds: 10), () {
-      Get.to(() => const LoginPage());
-    });
+  AuthController authController = Get.find<AuthController>();
+
+  restartLocalStorage() async {
+    SharedPreferences localStorage = await SharedPreferences.getInstance();
+
+    localStorage.setString("payment_method", "CASH");
+    localStorage.setString("note_to_driver", "");
+    localStorage.setString("source", "");
+    localStorage.setString("destination", "");
+    localStorage.setString("total_distance", "");
+    localStorage.setDouble("travel_price", 0.0);
   }
 
-  askPermission() async {
-    Map<Permission, PermissionStatus> statuses = await [
-      Permission.location,
-      Permission.storage,
-    ].request();
-    debugPrint(statuses[Permission.location] as String?);
+  startTimer() {
+    Timer(const Duration(seconds: 3), () {
+      authController.decideRoute();
+    });
   }
 
   @override
   void initState() {
     super.initState();
     startTimer();
-    askPermission();
+    restartLocalStorage();
   }
 
   @override

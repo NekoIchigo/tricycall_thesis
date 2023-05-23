@@ -1,5 +1,7 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:ui' as ui;
+import 'dart:math' show cos, sqrt, asin;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -15,6 +17,7 @@ import 'package:tricycall_thesis/pages/driver_found_page.dart';
 import 'package:tricycall_thesis/pages/select_locations_page.dart';
 
 import '../controller/auth_controller.dart';
+import '../controller/passenger_controller.dart';
 import '../widgets/drawer.dart';
 import 'package:group_radio_button/group_radio_button.dart';
 
@@ -31,6 +34,7 @@ class _HomePageState extends State<HomePage> {
   final googleApiKey = "AIzaSyBFPJ9b4hwLh_CwUAPEe8aMIGT4deavGCk";
   final Completer<GoogleMapController> _controller = Completer();
   AuthController authController = Get.find<AuthController>();
+  PassengerController passengerController = Get.find<PassengerController>();
 
   String paymentMethod = "CASH";
 
@@ -38,7 +42,15 @@ class _HomePageState extends State<HomePage> {
 
   String sourceText = "", destinationText = "";
 
+// Polypoint variables
+  late PolylinePoints polylinePoints;
   List<LatLng> polylineCoordinates = [];
+  Map<PolylineId, Polyline> polylines = {};
+
+  double? travelPrice, minute, seconds;
+  String? time;
+  String _placeDistance = ""; // Stores total distance of polyline
+
   Position? _currentLocation;
   Set<Marker> markers = <Marker>{};
 
@@ -47,6 +59,8 @@ class _HomePageState extends State<HomePage> {
       currentLocIcon = BitmapDescriptor.defaultMarker;
 
   bool isBookClicked = false;
+
+  var userUid = "";
 
   Future<bool> _handleLocationPermission() async {
     bool serviceEnabled;
@@ -103,6 +117,14 @@ class _HomePageState extends State<HomePage> {
     });
   }
 
+  getCurrentUserUid() async {
+    SharedPreferences localStorage = await SharedPreferences.getInstance();
+
+    userUid = localStorage.getString("user_uid") ?? "";
+
+    print(userUid);
+  }
+
   Future<Uint8List> getBytesFromAsset(String path, int width) async {
     ByteData data = await rootBundle.load(path);
     ui.Codec codec = await ui.instantiateImageCodec(data.buffer.asUint8List(),
@@ -135,7 +157,7 @@ class _HomePageState extends State<HomePage> {
   TextEditingController noteToDriver = TextEditingController();
   setNoteToDriver() async {
     SharedPreferences localStorage = await SharedPreferences.getInstance();
-    localStorage.setString("noteToDriver", noteToDriver.text);
+    localStorage.setString("note_to_driver", noteToDriver.text);
   }
 
   // TODO : Assign an empty value to locastorage source and destination after transaction
@@ -178,21 +200,72 @@ class _HomePageState extends State<HomePage> {
   }
 
   void getPolyPoints(sourceLocation, destination) async {
-    PolylinePoints polylinePoints = PolylinePoints();
+    SharedPreferences localStorage = await SharedPreferences.getInstance();
+
+    polylinePoints = PolylinePoints();
     PolylineResult result = await polylinePoints.getRouteBetweenCoordinates(
       googleApiKey,
       PointLatLng(sourceLocation.latitude, sourceLocation.longitude),
       PointLatLng(destination.latitude, destination.longitude),
+      travelMode: TravelMode.transit,
     );
     // print("polylineres = $result");
     if (result.points.isNotEmpty) {
-      for (var point in result.points) {
-        polylineCoordinates.add(
-          LatLng(point.latitude, point.longitude),
-        );
-      }
-      setState(() {});
+      result.points.forEach((PointLatLng point) {
+        polylineCoordinates.add(LatLng(point.latitude, point.longitude));
+      });
+      // Defining an ID
+      PolylineId id = PolylineId('poly');
+
+      // Initializing Polyline
+      Polyline polyline = Polyline(
+        polylineId: id,
+        color: Colors.red,
+        points: polylineCoordinates,
+        width: 3,
+      );
+
+      // Adding the polyline to the map
+      polylines[id] = polyline;
     }
+    double totalDistance = 0.0;
+
+    for (int i = 0; i < polylineCoordinates.length - 1; i++) {
+      totalDistance += coordinateDistance(
+        polylineCoordinates[i].latitude,
+        polylineCoordinates[i].longitude,
+        polylineCoordinates[i + 1].latitude,
+        polylineCoordinates[i + 1].longitude,
+      );
+    }
+
+// Storing the calculated total distance of the route
+    setState(() {
+      _placeDistance = totalDistance.toStringAsFixed(2);
+      localStorage.setString("total_distance", _placeDistance);
+      getPrice(10);
+      debugPrint('DISTANCE: $_placeDistance km');
+      minute = ((totalDistance / 20) * 60);
+      seconds = minute! - minute!.toInt();
+      seconds = seconds! * 60;
+      time = "${minute!.toInt()}: ${seconds!.toInt()}";
+    });
+  }
+
+  getPrice(perKM) async {
+    SharedPreferences localStorage = await SharedPreferences.getInstance();
+    travelPrice = perKM * double.parse(_placeDistance);
+    debugPrint("price $travelPrice");
+    localStorage.setDouble("travel_price", travelPrice!);
+  }
+
+  double coordinateDistance(lat1, lon1, lat2, lon2) {
+    var p = 0.017453292519943295;
+    var c = cos;
+    var a = 0.5 -
+        c((lat2 - lat1) * p) / 2 +
+        c(lat1 * p) * c(lat2 * p) * (1 - c((lon2 - lon1) * p)) / 2;
+    return 12742 * asin(sqrt(a));
   }
 
   setPolyPoint() async {
@@ -201,13 +274,9 @@ class _HomePageState extends State<HomePage> {
 
     sourceLocation = await getSourceLatLong();
     destination = await getDestinationLatLong();
-
-    setState(() {
-      getPolyPoints(sourceLocation, destination);
-    });
+    getPolyPoints(sourceLocation, destination);
+    setState(() {});
   }
-
-  searchDriver() {}
 
   @override
   initState() {
@@ -235,18 +304,18 @@ class _HomePageState extends State<HomePage> {
                     ),
                   )
                 : SizedBox(
-                    height: Get.height * .60,
+                    height: Get.height * .55,
                     child: googleMap(),
                   ),
             Container(
-              height: Get.height * .22,
+              height: Get.height * .25,
               decoration: const BoxDecoration(
                 color: Colors.white,
               ),
               child: interactionSection(),
             ),
             Container(
-              height: Get.height * .18,
+              height: Get.height * .20,
               decoration: const BoxDecoration(
                 color: Color(0xFFE7FFF4),
               ),
@@ -554,7 +623,7 @@ class _HomePageState extends State<HomePage> {
                       ),
                       const SizedBox(width: 10),
                       Text(
-                        "69 min",
+                        time ?? "Time",
                         style: GoogleFonts.varelaRound(
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
@@ -578,10 +647,10 @@ class _HomePageState extends State<HomePage> {
                     const SizedBox(width: 10),
                     InkWell(
                       onTap: () {
-                        Get.to(() => const DriverFoundPage());
+                        getCurrentUserUid();
                       },
                       child: Text(
-                        "69.69",
+                        "${travelPrice ?? "Price"} ",
                         style: GoogleFonts.varelaRound(
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
@@ -601,6 +670,7 @@ class _HomePageState extends State<HomePage> {
             Expanded(
               child: ElevatedButton(
                 onPressed: () {
+                  isBookClicked ? null : passengerController.storeBookingInfo();
                   setState(() {
                     isBookClicked = !isBookClicked;
                   });
@@ -627,7 +697,7 @@ class _HomePageState extends State<HomePage> {
                               color: Colors.green.shade900,
                             ),
                           ),
-                          const Expanded(child: SizedBox()),
+                          SizedBox(width: Get.width * .22),
                           CircleAvatar(
                             backgroundColor: Colors.green,
                             child: Text(
@@ -639,7 +709,7 @@ class _HomePageState extends State<HomePage> {
                               ),
                             ),
                           ),
-                          const SizedBox(width: 20),
+                          const SizedBox(width: 10),
                         ],
                       )
                     : Text(
@@ -676,14 +746,7 @@ class _HomePageState extends State<HomePage> {
                   _currentLocation!.latitude, _currentLocation!.longitude),
               zoom: 15,
             ),
-            polylines: {
-              Polyline(
-                polylineId: const PolylineId("route"),
-                points: polylineCoordinates,
-                color: Colors.green,
-                width: 6,
-              ),
-            },
+            polylines: Set<Polyline>.of(polylines.values),
             markers: markers,
           ),
           Positioned(

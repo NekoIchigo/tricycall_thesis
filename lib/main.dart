@@ -1,10 +1,14 @@
+// ignore_for_file: unused_local_variable
+
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:tricycall_thesis/pages/login_page.dart';
+import 'package:tricycall_thesis/pages/splash_screen.dart';
 
 import 'controller/auth_controller.dart';
+import 'controller/driver_controller.dart';
+import 'controller/passenger_controller.dart';
 import 'firebase_options.dart';
 
 Future<void> main() async {
@@ -21,7 +25,9 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     AuthController authController = Get.put(AuthController());
-    authController.decideRoute();
+    PassengerController passengerController = Get.put(PassengerController());
+    DriverController driverController = Get.put(DriverController());
+
     final textTheme = Theme.of(context).textTheme;
 
     return GetMaterialApp(
@@ -30,7 +36,7 @@ class MyApp extends StatelessWidget {
         primarySwatch: Colors.green,
         textTheme: GoogleFonts.varelaRoundTextTheme(textTheme),
       ),
-      home: const LoginPage(),
+      home: const SplashScreen(),
     );
   }
 }

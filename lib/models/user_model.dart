@@ -1,8 +1,13 @@
+// TODO : Create a driver status collection to store the current online and their location
+
 class UserModel {
   String? firstName;
   String? lastName;
   String? homeAddress;
   String? workAddress;
+  String? role;
+  String? email;
+  String? emergencyEmail;
   String? image;
 
   UserModel({
@@ -10,15 +15,36 @@ class UserModel {
     this.lastName,
     this.homeAddress,
     this.workAddress,
+    this.role,
+    this.email,
+    this.emergencyEmail,
     this.image,
   });
 
-  UserModel.fromJson(Map<String, dynamic> json) {
-    firstName = json['first_name'];
-    lastName = json['last_name'];
-    homeAddress = json['home_address'];
-    workAddress = json['work_address'];
-    image = json['image'];
+  Map<String, dynamic> toJson() {
+    return {
+      'firstName': firstName,
+      'lastName': lastName,
+      'homeAddress': homeAddress,
+      'workAddress': workAddress,
+      'role': role,
+      'email': email,
+      'emergencyEmail': emergencyEmail,
+      'image': image,
+    };
+  }
+
+  factory UserModel.fromJson(Map<String, dynamic> map) {
+    return UserModel(
+      firstName: map['firstName'],
+      lastName: map['lastName'],
+      homeAddress: map['homeAddress'],
+      workAddress: map['workAddress'],
+      role: map['role'],
+      email: map['email'],
+      emergencyEmail: map['emergencyEmail'],
+      image: map['image'],
+    );
   }
 }
 

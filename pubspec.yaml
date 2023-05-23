@@ -40,6 +40,9 @@ dependencies:
   loading_animation_widget: ^1.2.0+4
   flutter_rating_bar: ^4.0.1
   url_launcher: ^6.1.11
+  paymongo_sdk: ^1.6.1
+  timer_count_down: ^2.2.2
+  file_picker: ^5.3.0
 
 dev_dependencies:
   flutter_lints: ^2.0.1
