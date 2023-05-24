@@ -28,37 +28,8 @@ class _DriverFoundPageState extends State<DriverFoundPage> {
   Position? _currentLocation;
   Set<Marker> markers = <Marker>{};
 
-  Future<bool> _handleLocationPermission() async {
-    bool serviceEnabled;
-    LocationPermission permission;
-
-    serviceEnabled = await Geolocator.isLocationServiceEnabled();
-    if (!serviceEnabled) {
-      Get.snackbar("Permission Error",
-          "Location services are disabled. Please enable the services");
-
-      return false;
-    }
-    permission = await Geolocator.checkPermission();
-    if (permission == LocationPermission.denied) {
-      permission = await Geolocator.requestPermission();
-      if (permission == LocationPermission.denied) {
-        Get.snackbar("Permission Error", "Location permissions are denied");
-
-        return false;
-      }
-    }
-    if (permission == LocationPermission.deniedForever) {
-      Get.snackbar("Permission Error",
-          "Location permissions are permanently denied, we cannot request permissions.");
-
-      return false;
-    }
-    return true;
-  }
-
   Future<void> _getCurrentPosition() async {
-    final hasPermission = await _handleLocationPermission();
+    final hasPermission = await authController.handleLocationPermission();
     if (!hasPermission) return;
     await Geolocator.getCurrentPosition(desiredAccuracy: LocationAccuracy.high)
         .then((Position position) async {
@@ -88,21 +59,11 @@ class _DriverFoundPageState extends State<DriverFoundPage> {
     setState(() {});
   }
 
-  Future<Uint8List> getBytesFromAsset(String path, int width) async {
-    ByteData data = await rootBundle.load(path);
-    ui.Codec codec = await ui.instantiateImageCodec(data.buffer.asUint8List(),
-        targetWidth: width);
-    ui.FrameInfo fi = await codec.getNextFrame();
-    return (await fi.image.toByteData(format: ui.ImageByteFormat.png))!
-        .buffer
-        .asUint8List();
-  }
-
   BitmapDescriptor currentLocIcon = BitmapDescriptor.defaultMarker;
 
   void setCustomMarkerIcon() async {
-    final Uint8List currentIcon =
-        await getBytesFromAsset('assets/images/tricycle_icon.png', 50);
+    final Uint8List currentIcon = await authController.getBytesFromAsset(
+        'assets/images/tricycle_icon.png', 50);
     currentLocIcon = BitmapDescriptor.fromBytes(currentIcon);
   }
 
@@ -151,7 +112,6 @@ class _DriverFoundPageState extends State<DriverFoundPage> {
   @override
   void initState() {
     super.initState();
-    _handleLocationPermission();
     setCustomMarkerIcon();
     _getCurrentPosition();
     centerCamera();

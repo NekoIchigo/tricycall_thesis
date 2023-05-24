@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:tricycall_thesis/pages/login_page.dart';
 
 import 'driver_home_page.dart';
 
@@ -73,7 +74,7 @@ class _VerificationNoticePageState extends State<VerificationNoticePage> {
                       const EdgeInsets.symmetric(horizontal: 40, vertical: 10),
                   child: ElevatedButton(
                     onPressed: () {
-                      Get.to(() => const DriverHomePage());
+                      Get.to(() => const LoginPage());
                     },
                     style: ElevatedButton.styleFrom(
                       shape: RoundedRectangleBorder(

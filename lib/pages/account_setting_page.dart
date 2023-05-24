@@ -224,9 +224,9 @@ class _AccountSettingPageState extends State<AccountSettingPage> {
                     child: greenButton(
                       "Next",
                       () {
-                        // if (!formKey.currentState!.validate()) {
-                        //   return;
-                        // }
+                        if (!formKey.currentState!.validate()) {
+                          return;
+                        }
                         if (selectedImage == null) {
                           Get.snackbar("Image empty", "Please insert image");
                         } else {

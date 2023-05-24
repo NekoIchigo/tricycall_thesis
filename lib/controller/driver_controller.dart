@@ -13,6 +13,7 @@ import '../pages/home_page.dart';
 
 class DriverController extends GetxController {
   var isProfileUploading = false.obs;
+  // User token
 
   uploadImage(File image) async {
     String imageUrl = '';
@@ -55,6 +56,7 @@ class DriverController extends GetxController {
       'body_number': bodyNumber,
       'license_url': licenseFile,
       'tricycle_pic_url': tricycleFile,
+      'status': "ongoing", // rejected, ongoing, accepted, cancelled
     }, SetOptions(merge: true)).then((value) {
       isProfileUploading(false);
 
@@ -67,13 +69,8 @@ class DriverController extends GetxController {
     String firstName,
     String lastName,
     String email,
-    String emergencyEmail,
-    String home,
-    String work, {
+    String emergencyEmail, {
     String? url = '',
-    // LatLng? homeLatLng,
-    // LatLng? businessLatLng,
-    // LatLng? shoppingLatLng,
   }) async {
     String urlNew = url ?? "";
     if (selectedImage != null) {
@@ -87,8 +84,6 @@ class DriverController extends GetxController {
       'email': email,
       'role': 'driver',
       'emergency_email': emergencyEmail,
-      'home_address': home,
-      'work_address': work,
     }, SetOptions(merge: true)).then((value) {
       isProfileUploading(false);
 

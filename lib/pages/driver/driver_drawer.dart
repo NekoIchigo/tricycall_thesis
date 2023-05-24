@@ -17,7 +17,7 @@ Widget driverDrawer() {
         driverDrawerHeader(),
         const SizedBox(height: 20),
         Positioned(
-          top: Get.height * .25,
+          top: Get.height * .30,
           width: Get.width,
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -114,6 +114,9 @@ Widget driverDrawer() {
                       ),
                       ListTile(
                         contentPadding: const EdgeInsets.all(0),
+                        onTap: () {
+                          authController.signOut();
+                        },
                         leading: const RotatedBox(
                           quarterTurns: 2,
                           child: Icon(

@@ -5,17 +5,25 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
 
 // ignore: depend_on_referenced_packages, library_prefixes
 import 'package:path/path.dart' as Path;
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/user_model.dart';
 import '../pages/home_page.dart';
+import 'auth_controller.dart';
 
 class PassengerController extends GetxController {
-  var isProfileUploading = false.obs;
+  AuthController authController = Get.find<AuthController>();
+  RxBool isProfileUploading = false.obs;
   // ignore: prefer_typing_uninitialized_variables
   var bookingInfo;
+  RxBool isLocationsSet = false.obs;
+
+  changeLocationSet(value) {
+    isLocationsSet(value);
+  }
 
   uploadImage(File image) async {
     String imageUrl = '';
@@ -45,17 +53,13 @@ class PassengerController extends GetxController {
     String home,
     String work, {
     String? url = '',
-    // LatLng? homeLatLng,
-    // LatLng? businessLatLng,
-    // LatLng? shoppingLatLng,
   }) async {
     String urlNew = url ?? "";
     if (selectedImage != null) {
       urlNew = await uploadImage(selectedImage);
     }
     SharedPreferences localStorage = await SharedPreferences.getInstance();
-    String uid = FirebaseAuth.instance.currentUser!.uid;
-    localStorage.setString("user_id", uid);
+    String uid = localStorage.getString("user_uid")!;
     FirebaseFirestore.instance.collection('users').doc(uid).set({
       'image': urlNew,
       'first_name': firstName,
@@ -87,7 +91,7 @@ class PassengerController extends GetxController {
 
   storeBookingInfo() async {
     SharedPreferences localStorage = await SharedPreferences.getInstance();
-    String userId = localStorage.getString("user_id")!;
+    String userId = localStorage.getString("user_uid") ?? "";
     String paymentMethod = localStorage.getString("payment_method") ?? "CASH";
     String noteToDriver = localStorage.getString("note_to_driver") ?? "";
     String sourceLocation = localStorage.getString("source")!;
@@ -95,15 +99,26 @@ class PassengerController extends GetxController {
     String totalDistance = localStorage.getString("total_distance")!;
     double travelPrice = localStorage.getDouble("travel_price")!;
 
-    FirebaseFirestore.instance.collection("rides").doc().set({
+    LatLng sourceLatLng =
+        await authController.buildLatLngFromAddress(sourceLocation);
+    LatLng destinationLatLng =
+        await authController.buildLatLngFromAddress(destination);
+
+    var docRef = FirebaseFirestore.instance.collection("bookings").doc();
+    // var docId = docRef.id;
+
+    docRef.set({
       'user_id': userId,
       'driver_id': '',
       'payment_method': paymentMethod,
       'trip_distance': totalDistance,
       'price': travelPrice,
       'note_to_driver': noteToDriver,
-      'pick_up_location': sourceLocation,
-      'drop_off_location': destination,
+      'pick_up_location':
+          GeoPoint(sourceLatLng.latitude, sourceLatLng.longitude),
+      'drop_off_location':
+          GeoPoint(destinationLatLng.latitude, destinationLatLng.longitude),
+      'status': 'ongoing' // ongoing, cancelled, finish
     }, SetOptions(merge: true)).then((value) {
       // isProfileUploading(false);
 
@@ -115,6 +130,7 @@ class PassengerController extends GetxController {
     SharedPreferences localStorage = await SharedPreferences.getInstance();
   }
 }
+  
 
 // this query gets a stream of user records and deserialize it 
 // to a stream of UserRecord object 

@@ -6,6 +6,8 @@ import 'package:google_maps_webservice/places.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:tricycall_thesis/pages/home_page.dart';
 
+import '../controller/passenger_controller.dart';
+
 class SelectLocations extends StatefulWidget {
   const SelectLocations({super.key});
 
@@ -16,6 +18,7 @@ class SelectLocations extends StatefulWidget {
 class _SelectLocationsState extends State<SelectLocations> {
   TextEditingController pickUpLocation = TextEditingController();
   TextEditingController dropOffLocation = TextEditingController();
+  PassengerController passengerController = Get.find<PassengerController>();
   late SharedPreferences localStorage;
 
   getStorageInstance() async {
@@ -126,12 +129,16 @@ class _SelectLocationsState extends State<SelectLocations> {
                     width: Get.width * .80,
                     child: TextField(
                       onTap: () async {
-                        var result = await showGoogleAutoComplete();
-                        dropOffLocation.text = result;
-                        setDestinaiton(dropOffLocation.text);
-                        setState(() {});
-                        Get.to(() => const HomePage())!
-                            .then((value) => setState(() {}));
+                        if (pickUpLocation.text != "") {
+                          var result = await showGoogleAutoComplete();
+                          dropOffLocation.text = result;
+                          setDestinaiton(dropOffLocation.text);
+                          setState(() {});
+                          Get.to(() => const HomePage());
+                        } else {
+                          Get.snackbar("Missing input",
+                              "Please first fill up the pick up location");
+                        }
                       },
                       controller: dropOffLocation,
                       readOnly: true,

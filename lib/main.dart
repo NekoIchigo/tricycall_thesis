@@ -4,6 +4,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:tricycall_thesis/controller/notification_controller.dart';
 import 'package:tricycall_thesis/pages/splash_screen.dart';
 
 import 'controller/auth_controller.dart';
@@ -27,6 +28,8 @@ class MyApp extends StatelessWidget {
     AuthController authController = Get.put(AuthController());
     PassengerController passengerController = Get.put(PassengerController());
     DriverController driverController = Get.put(DriverController());
+    NotificationController notificationController =
+        Get.put(NotificationController());
 
     final textTheme = Theme.of(context).textTheme;
 

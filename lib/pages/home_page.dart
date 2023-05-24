@@ -1,8 +1,7 @@
 import 'dart:async';
-import 'dart:convert';
 import 'dart:ui' as ui;
-import 'dart:math' show cos, sqrt, asin;
 
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -13,7 +12,6 @@ import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:tricycall_thesis/pages/driver_found_page.dart';
 import 'package:tricycall_thesis/pages/select_locations_page.dart';
 
 import '../controller/auth_controller.dart';
@@ -62,38 +60,12 @@ class _HomePageState extends State<HomePage> {
 
   var userUid = "";
 
-  Future<bool> _handleLocationPermission() async {
-    bool serviceEnabled;
-    LocationPermission permission;
-
-    serviceEnabled = await Geolocator.isLocationServiceEnabled();
-    if (!serviceEnabled) {
-      Get.snackbar("Permission Error",
-          "Location services are disabled. Please enable the services");
-
-      return false;
-    }
-    permission = await Geolocator.checkPermission();
-    if (permission == LocationPermission.denied) {
-      permission = await Geolocator.requestPermission();
-      if (permission == LocationPermission.denied) {
-        Get.snackbar("Permission Error", "Location permissions are denied");
-
-        return false;
-      }
-    }
-    if (permission == LocationPermission.deniedForever) {
-      Get.snackbar("Permission Error",
-          "Location permissions are permanently denied, we cannot request permissions.");
-
-      return false;
-    }
-    return true;
-  }
-
   Future<void> _getCurrentPosition() async {
-    final hasPermission = await _handleLocationPermission();
-    if (!hasPermission) return;
+    final hasPermission = await authController.handleLocationPermission();
+    if (!hasPermission) {
+      Get.snackbar("Location not permitted",
+          "Please permit the use of location to use this app");
+    }
     await Geolocator.getCurrentPosition(desiredAccuracy: LocationAccuracy.high)
         .then((Position position) async {
       setState(() {
@@ -104,7 +76,7 @@ class _HomePageState extends State<HomePage> {
     });
   }
 
-  trackLoc() async {
+  Future<void> trackLoc() async {
     const LocationSettings locationSettings = LocationSettings(
       accuracy: LocationAccuracy.high,
       distanceFilter: 10,
@@ -117,33 +89,15 @@ class _HomePageState extends State<HomePage> {
     });
   }
 
-  getCurrentUserUid() async {
-    SharedPreferences localStorage = await SharedPreferences.getInstance();
-
-    userUid = localStorage.getString("user_uid") ?? "";
-
-    print(userUid);
-  }
-
-  Future<Uint8List> getBytesFromAsset(String path, int width) async {
-    ByteData data = await rootBundle.load(path);
-    ui.Codec codec = await ui.instantiateImageCodec(data.buffer.asUint8List(),
-        targetWidth: width);
-    ui.FrameInfo fi = await codec.getNextFrame();
-    return (await fi.image.toByteData(format: ui.ImageByteFormat.png))!
-        .buffer
-        .asUint8List();
-  }
-
   void setCustomMarkerIcon() async {
-    final Uint8List source =
-        await getBytesFromAsset('assets/images/source_icon.png', 50);
+    final Uint8List source = await authController.getBytesFromAsset(
+        'assets/images/source_icon.png', 50);
     sourceIcon = BitmapDescriptor.fromBytes(source);
-    final Uint8List destination =
-        await getBytesFromAsset('assets/images/destination_icon.png', 50);
+    final Uint8List destination = await authController.getBytesFromAsset(
+        'assets/images/destination_icon.png', 50);
     destinationIcon = BitmapDescriptor.fromBytes(destination);
-    final Uint8List currentIcon =
-        await getBytesFromAsset('assets/images/tricycle_icon.png', 80);
+    final Uint8List currentIcon = await authController.getBytesFromAsset(
+        'assets/images/tricycle_icon.png', 80);
     currentLocIcon = BitmapDescriptor.fromBytes(currentIcon);
   }
 
@@ -167,15 +121,10 @@ class _HomePageState extends State<HomePage> {
 
     var place = localStorage.getString("source") ?? "";
     sourceText = place;
-    // print("SourceText = $sourceText");
+    print("SourceText = $sourceText");
 
     sourceLocation = await authController.buildLatLngFromAddress(place);
-    // print("sourcelatlng =$sourceLocation");
-    markers.add(Marker(
-      markerId: const MarkerId("source"),
-      icon: sourceIcon,
-      position: sourceLocation,
-    ));
+    print("sourcelatlng =$sourceLocation");
 
     return sourceLocation;
   }
@@ -186,16 +135,10 @@ class _HomePageState extends State<HomePage> {
 
     var place = localStorage.getString("destination") ?? "";
     destinationText = place;
-    // print("DestinationText = $destinationText");
+    print("DestinationText = $destinationText");
 
     destination = await authController.buildLatLngFromAddress(place);
-    // print("DesLatLng = $destination");
-    markers.add(Marker(
-      markerId: const MarkerId("destination"),
-      icon: destinationIcon,
-      position: destination,
-    ));
-
+    print("DesLatLng = $destination");
     return destination;
   }
 
@@ -231,7 +174,7 @@ class _HomePageState extends State<HomePage> {
     double totalDistance = 0.0;
 
     for (int i = 0; i < polylineCoordinates.length - 1; i++) {
-      totalDistance += coordinateDistance(
+      totalDistance += authController.coordinateDistance(
         polylineCoordinates[i].latitude,
         polylineCoordinates[i].longitude,
         polylineCoordinates[i + 1].latitude,
@@ -252,6 +195,29 @@ class _HomePageState extends State<HomePage> {
     });
   }
 
+  setPolyPoint() async {
+    late LatLng sourceLocation;
+    late LatLng destination;
+
+    sourceLocation = await getSourceLatLong();
+    markers.add(Marker(
+      markerId: const MarkerId("source"),
+      icon: sourceIcon,
+      position: sourceLocation,
+    ));
+
+    destination = await getDestinationLatLong();
+    markers.add(Marker(
+      markerId: const MarkerId("destination"),
+      icon: destinationIcon,
+      position: destination,
+    ));
+
+    getPolyPoints(sourceLocation, destination);
+
+    setState(() {});
+  }
+
   getPrice(perKM) async {
     SharedPreferences localStorage = await SharedPreferences.getInstance();
     travelPrice = perKM * double.parse(_placeDistance);
@@ -259,34 +225,43 @@ class _HomePageState extends State<HomePage> {
     localStorage.setDouble("travel_price", travelPrice!);
   }
 
-  double coordinateDistance(lat1, lon1, lat2, lon2) {
-    var p = 0.017453292519943295;
-    var c = cos;
-    var a = 0.5 -
-        c((lat2 - lat1) * p) / 2 +
-        c(lat1 * p) * c(lat2 * p) * (1 - c((lon2 - lon1) * p)) / 2;
-    return 12742 * asin(sqrt(a));
+  getCurrentUserUid() async {
+    SharedPreferences localStorage = await SharedPreferences.getInstance();
+    userUid = localStorage.getString("user_uid") ?? "";
   }
 
-  setPolyPoint() async {
-    late LatLng sourceLocation;
-    late LatLng destination;
+  void displayOnlineDriversOnMap() {
+    FirebaseFirestore.instance
+        .collection('driver_status')
+        .where('status', isEqualTo: 'online')
+        .get()
+        .then((QuerySnapshot querySnapshot) {
+      for (var documentSnapshot in querySnapshot.docs) {
+        double latitude = documentSnapshot['latitude'];
+        double longitude = documentSnapshot['longitude'];
 
-    sourceLocation = await getSourceLatLong();
-    destination = await getDestinationLatLong();
-    getPolyPoints(sourceLocation, destination);
-    setState(() {});
+        // Create a Marker for each online driver
+        Marker marker = Marker(
+          markerId: MarkerId(documentSnapshot.id),
+          position: LatLng(latitude, longitude),
+          // Add any other customization for the marker, e.g., icon, info window, etc.
+        );
+
+        markers.add(marker);
+      }
+    });
   }
 
   @override
   initState() {
     super.initState();
-    _handleLocationPermission();
     _getCurrentPosition();
     trackLoc();
     setCustomMarkerIcon();
     getPaymentMethod();
+    getCurrentUserUid();
     setPolyPoint();
+    displayOnlineDriversOnMap();
   }
 
   @override
@@ -647,10 +622,10 @@ class _HomePageState extends State<HomePage> {
                     const SizedBox(width: 10),
                     InkWell(
                       onTap: () {
-                        getCurrentUserUid();
+                        authController.testHealth();
                       },
                       child: Text(
-                        "${travelPrice ?? "Price"} ",
+                        "${travelPrice?.toStringAsFixed(2) ?? "Price"} ",
                         style: GoogleFonts.varelaRound(
                           fontSize: 16,
                           fontWeight: FontWeight.bold,

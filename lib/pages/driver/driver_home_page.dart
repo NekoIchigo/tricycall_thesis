@@ -1,8 +1,7 @@
 import 'dart:async';
-import 'dart:convert';
-import 'dart:ui' as ui;
 
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:geolocator/geolocator.dart';
@@ -12,6 +11,7 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../../controller/notification_controller.dart';
 import '../chat_page.dart';
 import 'booking_found_page.dart';
 import 'driver_drawer.dart';
@@ -26,43 +26,17 @@ class DriverHomePage extends StatefulWidget {
 class _DriverHomePageState extends State<DriverHomePage> {
   final googleApiKey = "AIzaSyBFPJ9b4hwLh_CwUAPEe8aMIGT4deavGCk";
   GlobalKey<ScaffoldState> scaffoldState = GlobalKey<ScaffoldState>();
+  NotificationController notificationController =
+      Get.find<NotificationController>();
 
   final Completer<GoogleMapController> _controller = Completer();
   List<LatLng> polylineCoordinates = [];
   Position? _currentLocation;
   Set<Marker> markers = <Marker>{};
 
+  bool isOnline = false;
   var userUid = "";
   var lat = "14.5547", lng = "121.0244";
-
-  Future<bool> _handleLocationPermission() async {
-    bool serviceEnabled;
-    LocationPermission permission;
-
-    serviceEnabled = await Geolocator.isLocationServiceEnabled();
-    if (!serviceEnabled) {
-      Get.snackbar("Permission Error",
-          "Location services are disabled. Please enable the services");
-
-      return false;
-    }
-    permission = await Geolocator.checkPermission();
-    if (permission == LocationPermission.denied) {
-      permission = await Geolocator.requestPermission();
-      if (permission == LocationPermission.denied) {
-        Get.snackbar("Permission Error", "Location permissions are denied");
-
-        return false;
-      }
-    }
-    if (permission == LocationPermission.deniedForever) {
-      Get.snackbar("Permission Error",
-          "Location permissions are permanently denied, we cannot request permissions.");
-
-      return false;
-    }
-    return true;
-  }
 
   Future<void> _getCurrentPosition() async {
     await Geolocator.getCurrentPosition(desiredAccuracy: LocationAccuracy.high)
@@ -71,7 +45,7 @@ class _DriverHomePageState extends State<DriverHomePage> {
         _currentLocation = position;
       });
     }).catchError((e) {
-      debugPrint(e);
+      debugPrint(e.toString());
     });
     // print(_currentLocation);
   }
@@ -93,36 +67,31 @@ class _DriverHomePageState extends State<DriverHomePage> {
     setState(() {});
   }
 
-  Future<Uint8List> getBytesFromAsset(String path, int width) async {
-    ByteData data = await rootBundle.load(path);
-    ui.Codec codec = await ui.instantiateImageCodec(data.buffer.asUint8List(),
-        targetWidth: width);
-    ui.FrameInfo fi = await codec.getNextFrame();
-    return (await fi.image.toByteData(format: ui.ImageByteFormat.png))!
-        .buffer
-        .asUint8List();
-  }
-
   BitmapDescriptor currentLocIcon = BitmapDescriptor.defaultMarker;
 
   void setCustomMarkerIcon() async {
-    final Uint8List currentIcon =
-        await getBytesFromAsset('assets/images/tricycle_icon.png', 50);
+    final Uint8List currentIcon = await authController.getBytesFromAsset(
+        'assets/images/tricycle_icon.png', 50);
     currentLocIcon = BitmapDescriptor.fromBytes(currentIcon);
   }
 
   getCurrentUserUid() async {
     SharedPreferences localStorage = await SharedPreferences.getInstance();
 
-    userUid = localStorage.getString("user_uid") ?? "";
+    return localStorage.getString("user_uid") ?? "";
   }
 
-  trackLoc() async {
+  trackLoc(bool isOnline) async {
+    SharedPreferences localStorage = await SharedPreferences.getInstance();
+    String? token = notificationController.fcmToken;
+    String status = isOnline ? "online" : "offline";
     const LocationSettings locationSettings = LocationSettings(
       accuracy: LocationAccuracy.high,
       distanceFilter: 10,
     );
-    var docId = getCurrentUserUid();
+    // var docId = getCurrentUserUid();
+    User? user = FirebaseAuth.instance.currentUser;
+
     debugPrint("curerntLoc = $_currentLocation");
     Geolocator.getPositionStream(locationSettings: locationSettings)
         .listen((Position? position) async {
@@ -138,11 +107,12 @@ class _DriverHomePageState extends State<DriverHomePage> {
       // update location in database
       await FirebaseFirestore.instance
           .collection('driver_status')
-          .doc(docId)
+          .doc(user!.uid)
           .set({
         'latitude': _currentLocation!.latitude,
         'longitude': _currentLocation!.longitude,
-        'status': 'online' // offline, online, booked
+        'token': token,
+        'status': status // offline, online, booked
       }, SetOptions(merge: true));
     });
     setState(() {});
@@ -151,7 +121,6 @@ class _DriverHomePageState extends State<DriverHomePage> {
   @override
   void initState() {
     super.initState();
-    _handleLocationPermission();
     _getCurrentPosition();
     centerCamera();
   }
@@ -190,7 +159,7 @@ class _DriverHomePageState extends State<DriverHomePage> {
                     },
                     markers: markers,
                   )
-                : const CircularProgressIndicator(),
+                : const Center(child: CircularProgressIndicator()),
             Positioned(
               top: 10,
               left: 20,
@@ -272,6 +241,28 @@ class _DriverHomePageState extends State<DriverHomePage> {
                     await launchUrl(Uri.parse(
                         'google.navigation:q=$lat,$lng&key=$googleApiKey'));
                   },
+                ),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 100.0),
+              child: Align(
+                alignment: Alignment.bottomCenter,
+                child: CircleAvatar(
+                  radius: 30,
+                  backgroundColor: isOnline ? Colors.green : Colors.red,
+                  child: IconButton(
+                    icon: const Icon(
+                      Icons.power_settings_new_rounded,
+                      color: Colors.white,
+                      size: 30,
+                    ),
+                    onPressed: () async {
+                      isOnline = !isOnline;
+                      trackLoc(isOnline);
+                      setState(() {});
+                    },
+                  ),
                 ),
               ),
             ),

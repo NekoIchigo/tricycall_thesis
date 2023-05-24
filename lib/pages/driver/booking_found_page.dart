@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -49,25 +48,15 @@ class _BookFoundPageState extends State<BookFoundPage> {
     });
   }
 
-  Future<Uint8List> getBytesFromAsset(String path, int width) async {
-    ByteData data = await rootBundle.load(path);
-    ui.Codec codec = await ui.instantiateImageCodec(data.buffer.asUint8List(),
-        targetWidth: width);
-    ui.FrameInfo fi = await codec.getNextFrame();
-    return (await fi.image.toByteData(format: ui.ImageByteFormat.png))!
-        .buffer
-        .asUint8List();
-  }
-
   void setCustomMarkerIcon() async {
-    final Uint8List source =
-        await getBytesFromAsset('assets/images/source_icon.png', 50);
+    final Uint8List source = await authController.getBytesFromAsset(
+        'assets/images/source_icon.png', 50);
     sourceIcon = BitmapDescriptor.fromBytes(source);
-    final Uint8List destination =
-        await getBytesFromAsset('assets/images/destination_icon.png', 50);
+    final Uint8List destination = await authController.getBytesFromAsset(
+        'assets/images/destination_icon.png', 50);
     destinationIcon = BitmapDescriptor.fromBytes(destination);
-    final Uint8List currentIcon =
-        await getBytesFromAsset('assets/images/tricycle_icon.png', 80);
+    final Uint8List currentIcon = await authController.getBytesFromAsset(
+        'assets/images/tricycle_icon.png', 80);
     currentLocIcon = BitmapDescriptor.fromBytes(currentIcon);
   }
 
