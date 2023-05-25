@@ -7,8 +7,13 @@ class NotificationController extends GetxController {
   // create firebase messaging instance
   final FirebaseMessaging _firebaseMessaging = FirebaseMessaging.instance;
   String? _fcmToken;
+  var bookingId = "".obs;
 
   String? get fcmToken => _fcmToken;
+
+  updateBookingId(String? id) {
+    bookingId(id);
+  }
 
   @override
   void onInit() {

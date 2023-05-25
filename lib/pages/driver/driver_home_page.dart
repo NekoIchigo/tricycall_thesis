@@ -38,6 +38,8 @@ class _DriverHomePageState extends State<DriverHomePage> {
   var userUid = "";
   var lat = "14.5547", lng = "121.0244";
 
+  String status = "";
+
   Future<void> _getCurrentPosition() async {
     await Geolocator.getCurrentPosition(desiredAccuracy: LocationAccuracy.high)
         .then((Position position) async {
@@ -81,10 +83,8 @@ class _DriverHomePageState extends State<DriverHomePage> {
     return localStorage.getString("user_uid") ?? "";
   }
 
-  trackLoc(bool isOnline) async {
-    SharedPreferences localStorage = await SharedPreferences.getInstance();
+  trackLoc(String status) async {
     String? token = notificationController.fcmToken;
-    String status = isOnline ? "online" : "offline";
     const LocationSettings locationSettings = LocationSettings(
       accuracy: LocationAccuracy.high,
       distanceFilter: 10,
@@ -250,7 +250,7 @@ class _DriverHomePageState extends State<DriverHomePage> {
                 alignment: Alignment.bottomCenter,
                 child: CircleAvatar(
                   radius: 30,
-                  backgroundColor: isOnline ? Colors.green : Colors.red,
+                  backgroundColor: isOnline ? Colors.red : Colors.green,
                   child: IconButton(
                     icon: const Icon(
                       Icons.power_settings_new_rounded,
@@ -259,8 +259,10 @@ class _DriverHomePageState extends State<DriverHomePage> {
                     ),
                     onPressed: () async {
                       isOnline = !isOnline;
-                      trackLoc(isOnline);
-                      setState(() {});
+                      status = isOnline ? "online" : "offline";
+                      setState(() {
+                        trackLoc(status);
+                      });
                     },
                   ),
                 ),

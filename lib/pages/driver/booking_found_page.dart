@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -11,6 +12,7 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../controller/auth_controller.dart';
+import '../../controller/notification_controller.dart';
 import 'driver_drawer.dart';
 
 class BookFoundPage extends StatefulWidget {
@@ -25,6 +27,8 @@ class _BookFoundPageState extends State<BookFoundPage> {
   final googleApiKey = "AIzaSyBFPJ9b4hwLh_CwUAPEe8aMIGT4deavGCk";
   AuthController authController = Get.find<AuthController>();
   final Completer<GoogleMapController> _controller = Completer();
+  NotificationController notificationController =
+      Get.find<NotificationController>();
 
   GlobalKey<ScaffoldState> scaffoldState = GlobalKey<ScaffoldState>();
   Position? _currentLocation;
@@ -126,6 +130,16 @@ class _BookFoundPageState extends State<BookFoundPage> {
     setState(() {
       getPolyPoints(sourceLocation, destination);
     });
+  }
+
+  getBookingData() async {
+    var bookingId = notificationController.bookingId.value;
+    var bookingData = await FirebaseFirestore.instance
+        .collection("booking")
+        .doc(bookingId)
+        .get();
+    print("Booking ID: $bookingId");
+    print("Booking data: $bookingData");
   }
 
   @override
@@ -310,7 +324,9 @@ class _BookFoundPageState extends State<BookFoundPage> {
                     borderRadius: BorderRadius.circular(20)),
                 backgroundColor: Colors.white,
               ),
-              onPressed: () {},
+              onPressed: () {
+                getBookingData();
+              },
               child: Text(
                 "Notes from Passenger",
                 style: GoogleFonts.varelaRound(
