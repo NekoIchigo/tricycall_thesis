@@ -3,42 +3,9 @@ import * as admin from "firebase-admin";
 import * as geolib from "geolib";
 
 admin.initializeApp();
-const fcm = admin.messaging();
 
 exports.checkHelth = functions.https.onCall(async (data, context) => {
   return "The function is online";
-});
-
-exports.sendNotification = functions.https.onCall(async (data, context) => {
-  const title = data.title;
-  const body = data.body;
-  const image = data.image;
-  const token = data.token;
-
-  try {
-    const payload = {
-      token: token,
-      notification: {
-        title: title,
-        body: body,
-        image: image,
-      },
-      data: {
-        body: body,
-      },
-    };
-
-    return fcm.send(payload).then((response) => {
-      return {
-        success: true,
-        response: "Sucessfully send message: " + response,
-      };
-    }).catch((error) => {
-      return {error: error};
-    });
-  } catch (error) {
-    throw new functions.https.HttpsError("invalid-argument", "error: " + error);
-  }
 });
 
 export const bookRide = functions.firestore.document("bookings/{bookingId}")
@@ -132,30 +99,64 @@ async function sendNotificationToDevice(
   }
 }
 
+export const driverResponse = functions.https.onRequest(async (req, res) => {
+  const {driverId, bookingId, response} = req.body;
 
-// export const sendBookingNotification = functions.firestore.document(
-//   "bookings/{bookingId}"
-// ).onCreate(async (snapshot, context) => {
-//   const bookingData = snapshot.data();
-//   const bookingId = context.params.bookingId; // Retrieve the booking ID
-//   const driverId = bookingData.driverId;
-//   const driverToken = await getDriverToken(driverId);
+  const bookingDataSnapshot = await admin.firestore()
+    .collection("bookings")
+    .doc(bookingId)
+    .get();
 
-//   const message: admin.messaging.Message = {
-//     notification: {
-//       title: "New Booking",
-//       body: "You have a new booking request.",
-//     },
-//     token: driverToken,
-//     data: {
-//       bookingId: bookingId, // Pass the booking ID in the data payload
-//     },
-//   };
+  if (response === "declined") {
+    try {
+      // Get the pick-up location from the booking data
+      const bookingData = bookingDataSnapshot.data();
+      const pickupLocation = bookingData?.pick_up_location;
 
-//   try {
-//     const response = await admin.messaging().send(message);
-//     console.log("Notification sent successfully:", response);
-//   } catch (error) {
-//     console.error("Error sending notification:", error);
-//   }
-// });
+      if (!pickupLocation) {
+        throw new Error("Invalid booking data");
+      }
+      // Get all online drivers except the one who declined
+      const onlineDriversSnapshot = await admin
+        .firestore()
+        .collection("driver_status")
+        .where("status", "==", "online")
+        .where("driverId", "!=", driverId)
+        .get();
+
+      let nearestDriverId: string | null = null;
+      let nearestDriverDistance: number | null = null;
+
+      onlineDriversSnapshot.forEach((driverSnapshot) => {
+        const driverData = driverSnapshot.data();
+        const driverLocation = {
+          latitude: driverData.latitude,
+          longitude: driverData.longitude,
+        };
+        const distance = geolib.getDistance(pickupLocation, driverLocation);
+
+        if (nearestDriverDistance === null ||
+           distance < nearestDriverDistance) {
+          nearestDriverId = driverSnapshot.id;
+          nearestDriverDistance = distance;
+        }
+      });
+
+      if (nearestDriverId) {
+        // Update the bookings document with the new driver ID
+        await admin
+          .firestore()
+          .collection("bookings")
+          .doc(bookingId)
+          .update({driver_id: nearestDriverId});
+      }
+
+      res.status(200).send("OK");
+    } catch (error) {
+      console.error("Error:", error);
+      res.status(500).send("Error occurred");
+    }
+  } else {
+    res.status(200).send("OK");
+  }
+});

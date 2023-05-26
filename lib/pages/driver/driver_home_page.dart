@@ -41,6 +41,11 @@ class _DriverHomePageState extends State<DriverHomePage> {
   String status = "";
 
   Future<void> _getCurrentPosition() async {
+    final hasPermission = await authController.handleLocationPermission();
+    if (!hasPermission) {
+      Get.snackbar("Location not permitted",
+          "Please permit the use of location to use this app");
+    }
     await Geolocator.getCurrentPosition(desiredAccuracy: LocationAccuracy.high)
         .then((Position position) async {
       setState(() {
@@ -78,24 +83,33 @@ class _DriverHomePageState extends State<DriverHomePage> {
   }
 
   getCurrentUserUid() async {
-    SharedPreferences localStorage = await SharedPreferences.getInstance();
-
-    return localStorage.getString("user_uid") ?? "";
+    User? user = FirebaseAuth.instance.currentUser;
+    userUid = user!.uid;
   }
 
-  trackLoc(String status) async {
+  initDriverStatus() async {
     String? token = notificationController.fcmToken;
+    await FirebaseFirestore.instance
+        .collection('driver_status')
+        .doc(userUid)
+        .set({
+      'latitude': _currentLocation!.latitude,
+      'longitude': _currentLocation!.longitude,
+      'token': token,
+      'status': 'offline', // offline, online, booked
+    });
+    Get.snackbar("Init Driver Status", "Init Triggered id: $userUid");
+  }
+
+  trackLoc() async {
     const LocationSettings locationSettings = LocationSettings(
       accuracy: LocationAccuracy.high,
       distanceFilter: 10,
     );
-    // var docId = getCurrentUserUid();
-    User? user = FirebaseAuth.instance.currentUser;
-
-    debugPrint("curerntLoc = $_currentLocation");
     Geolocator.getPositionStream(locationSettings: locationSettings)
         .listen((Position? position) async {
       _currentLocation = position;
+
       // update marker
       markers.add(Marker(
         markerId: const MarkerId("currentLoc"),
@@ -107,22 +121,37 @@ class _DriverHomePageState extends State<DriverHomePage> {
       // update location in database
       await FirebaseFirestore.instance
           .collection('driver_status')
-          .doc(user!.uid)
-          .set({
+          .doc(userUid)
+          .update({
         'latitude': _currentLocation!.latitude,
         'longitude': _currentLocation!.longitude,
-        'token': token,
-        'status': status // offline, online, booked
-      }, SetOptions(merge: true));
+        // 'status': status // offline, online, booked
+      });
+
+      setState(() {});
     });
-    setState(() {});
+  }
+
+  updateStatus(String status) async {
+    await FirebaseFirestore.instance
+        .collection('driver_status')
+        .doc(userUid)
+        .update({
+      'status': status
+      // 'status': status // offline, online, booked
+    });
   }
 
   @override
   void initState() {
     super.initState();
+    getCurrentUserUid();
     _getCurrentPosition();
     centerCamera();
+    Future.delayed(Duration(milliseconds: 500), () {
+      initDriverStatus();
+      trackLoc();
+    });
   }
 
   @override
@@ -197,7 +226,9 @@ class _DriverHomePageState extends State<DriverHomePage> {
                 child: IconButton(
                   icon: const Icon(Icons.my_location, color: Colors.white),
                   onPressed: () {
-                    centerCamera();
+                    //initDriverStatus();
+                    trackLoc();
+                    //centerCamera();
                   },
                 ),
               ),
@@ -211,7 +242,8 @@ class _DriverHomePageState extends State<DriverHomePage> {
                 child: IconButton(
                   icon: const Icon(Icons.check, color: Colors.white),
                   onPressed: () {
-                    Get.to(() => const BookFoundPage());
+                    Get.snackbar("User id", userUid);
+                    // Get.to(() => const BookFoundPage());
                     // Get.bottomSheet(
                     //   isDismissible: false,
                     //   enableDrag: false,
@@ -260,9 +292,8 @@ class _DriverHomePageState extends State<DriverHomePage> {
                     onPressed: () async {
                       isOnline = !isOnline;
                       status = isOnline ? "online" : "offline";
-                      setState(() {
-                        trackLoc(status);
-                      });
+                      updateStatus(status);
+                      setState(() {});
                     },
                   ),
                 ),

@@ -175,6 +175,55 @@ class AuthController extends GetxController {
     return LatLng(locations.first.latitude, locations.first.longitude);
   }
 
+  Future<String> getAddressFromLatLng(double latitude, double longitude) async {
+    try {
+      List<geoCoding.Placemark> placemarks =
+          await geoCoding.placemarkFromCoordinates(latitude, longitude);
+      if (placemarks.isNotEmpty) {
+        geoCoding.Placemark placemark = placemarks[0];
+        String address = '';
+
+        if (placemark.name != null) {
+          address += '${placemark.name}, ';
+        }
+        if (placemark.street != null) {
+          address += '${placemark.street}, ';
+        }
+        if (placemark.subThoroughfare != null) {
+          address += '${placemark.subThoroughfare}, ';
+        }
+        if (placemark.thoroughfare != null) {
+          address += '${placemark.thoroughfare}, ';
+        }
+        if (placemark.subLocality != null) {
+          address += '${placemark.subLocality}, ';
+        }
+        if (placemark.locality != null) {
+          address += '${placemark.locality}, ';
+        }
+        // if (placemark.subAdministrativeArea != null) {
+        //   address += '${placemark.subAdministrativeArea}, ';
+        // }
+        // if (placemark.administrativeArea != null) {
+        //   address += '${placemark.administrativeArea}, ';
+        // }
+        // if (placemark.postalCode != null) {
+        //   address += '${placemark.postalCode}, ';
+        // }
+        // if (placemark.country != null) {
+        //   address += placemark.country!;
+        // }
+
+        return address.isNotEmpty ? address : 'Unknown address';
+      } else {
+        return 'No address found';
+      }
+    } catch (e) {
+      print('Error: $e');
+      return 'Unable to fetch address';
+    }
+  }
+
   Future<Prediction?> showGoogleAutoComplete(BuildContext context) async {
     Prediction? p = await PlacesAutocomplete.show(
       offset: 0,

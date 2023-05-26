@@ -68,10 +68,7 @@ class NotificationController extends GetxController {
       // For example, show a local notification or update app state
       // You can use packages like flutter_local_notifications for local notifications
       Get.snackbar(title!, body!);
-      // Print the notification details for debugging
-      print('Notification received:');
-      print('Title: $title');
-      print('Body: $body');
+      // Print the notification details for debugging-
     }
 
     if (data.isNotEmpty) {
@@ -81,13 +78,10 @@ class NotificationController extends GetxController {
 
       // Do something with the booking data
       // For example, update app state or perform a specific action based on the data
-      // TODO : create a process when notification is received
       Get.to(() => const BookFoundPage());
       Get.snackbar("Booking Data", bookingData.toString());
 
-      // Print the data payload for debugging
-      print('Data payload received:');
-      print('Booking Data: $bookingData');
+      updateBookingId(bookingData);
     }
   }
 

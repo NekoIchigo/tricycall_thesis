@@ -9,7 +9,6 @@ import 'package:geolocator/geolocator.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../controller/auth_controller.dart';
 import '../../controller/notification_controller.dart';
@@ -32,7 +31,9 @@ class _BookFoundPageState extends State<BookFoundPage> {
 
   GlobalKey<ScaffoldState> scaffoldState = GlobalKey<ScaffoldState>();
   Position? _currentLocation;
-  String sourceText = "", destinationText = "";
+  String sourceText = "", destinationText = "", notesFromPassenger = "";
+  // ignore: prefer_typing_uninitialized_variables
+  var price;
 
   List<LatLng> polylineCoordinates = [];
   Set<Marker> markers = <Marker>{};
@@ -64,44 +65,6 @@ class _BookFoundPageState extends State<BookFoundPage> {
     currentLocIcon = BitmapDescriptor.fromBytes(currentIcon);
   }
 
-  getSourceLatLong() async {
-    SharedPreferences localStorage = await SharedPreferences.getInstance();
-    late LatLng sourceLocation;
-
-    var place = localStorage.getString("source") ?? "";
-    sourceText = place;
-    // print("SourceText = $sourceText");
-
-    sourceLocation = await authController.buildLatLngFromAddress(place);
-    // print("sourcelatlng =$sourceLocation");
-    markers.add(Marker(
-      markerId: const MarkerId("source"),
-      icon: sourceIcon,
-      position: sourceLocation,
-    ));
-
-    return sourceLocation;
-  }
-
-  getDestinationLatLong() async {
-    SharedPreferences localStorage = await SharedPreferences.getInstance();
-    late LatLng destination;
-
-    var place = localStorage.getString("destination") ?? "";
-    destinationText = place;
-    // print("DestinationText = $destinationText");
-
-    destination = await authController.buildLatLngFromAddress(place);
-    // print("DesLatLng = $destination");
-    markers.add(Marker(
-      markerId: const MarkerId("destination"),
-      icon: destinationIcon,
-      position: destination,
-    ));
-
-    return destination;
-  }
-
   void getPolyPoints(sourceLocation, destination) async {
     PolylinePoints polylinePoints = PolylinePoints();
     PolylineResult result = await polylinePoints.getRouteBetweenCoordinates(
@@ -120,26 +83,47 @@ class _BookFoundPageState extends State<BookFoundPage> {
     }
   }
 
-  setPolyPoint() async {
-    late LatLng sourceLocation;
-    late LatLng destination;
-
-    sourceLocation = await getSourceLatLong();
-    destination = await getDestinationLatLong();
-
-    setState(() {
-      getPolyPoints(sourceLocation, destination);
-    });
-  }
-
   getBookingData() async {
     var bookingId = notificationController.bookingId.value;
-    var bookingData = await FirebaseFirestore.instance
-        .collection("booking")
-        .doc(bookingId)
+    var bookingSnapshot = await FirebaseFirestore.instance
+        .collection("bookings")
+        .doc(bookingId.toString())
         .get();
-    print("Booking ID: $bookingId");
-    print("Booking data: $bookingData");
+
+    Get.snackbar("Booking ID", bookingId);
+    if (bookingSnapshot.exists) {
+      var bookingData = bookingSnapshot.data();
+      Get.snackbar("Booking Check", "Booking Exists");
+      if (bookingData != null) {
+        var sourceLocation = bookingData['pick_up_location'];
+        var destination = bookingData['drop_off_location'];
+
+        price = bookingData['price'];
+        sourceText = bookingData['pick_up_text'];
+        destinationText = bookingData['drop_off_text'];
+        notesFromPassenger = bookingData['note_to_driver'] ?? "No notes";
+
+        // sourceText = await authController.getAddressFromLatLng(
+        //     sourceLocation.latitude, sourceLocation.longitude);
+        // destinationText = await authController.getAddressFromLatLng(
+        //     destination.latitude, destination.longitude);
+
+        setState(() {
+          markers.add(Marker(
+            markerId: const MarkerId("source"),
+            icon: sourceIcon,
+            position: LatLng(sourceLocation.latitude, sourceLocation.longitude),
+          ));
+
+          markers.add(Marker(
+            markerId: const MarkerId("destination"),
+            icon: destinationIcon,
+            position: LatLng(destination.latitude, destination.longitude),
+          ));
+          getPolyPoints(sourceLocation, destination);
+        });
+      }
+    }
   }
 
   @override
@@ -148,7 +132,7 @@ class _BookFoundPageState extends State<BookFoundPage> {
     _getCurrentPosition();
     setCustomMarkerIcon();
     // getPaymentMethod();
-    setPolyPoint();
+    getBookingData();
   }
 
   @override
@@ -156,37 +140,35 @@ class _BookFoundPageState extends State<BookFoundPage> {
     return Scaffold(
       key: scaffoldState,
       drawer: driverDrawer(),
-      body: SingleChildScrollView(
-        child: Column(
-          children: [
-            _currentLocation == null
-                ? const Center(
-                    child: CircularProgressIndicator(
-                      color: Colors.green,
-                    ),
-                  )
-                : SizedBox(
-                    height: Get.height * .60,
-                    child: googleMap(),
+      body: Column(
+        children: [
+          _currentLocation == null
+              ? const Center(
+                  child: CircularProgressIndicator(
+                    color: Colors.green,
                   ),
-            Container(
-              height: Get.height * .18,
-              width: Get.width,
-              decoration: const BoxDecoration(
-                color: Colors.white,
-              ),
-              child: informationDetails(),
+                )
+              : SizedBox(
+                  height: Get.height * .60,
+                  child: googleMap(),
+                ),
+          Container(
+            height: Get.height * .18,
+            width: Get.width,
+            decoration: const BoxDecoration(
+              color: Colors.white,
             ),
-            Container(
-              height: Get.height * .23,
-              width: Get.width,
-              decoration: const BoxDecoration(
-                color: Color(0xFFE7FFF4),
-              ),
-              child: interactionSection(),
-            )
-          ],
-        ),
+            child: informationDetails(),
+          ),
+          Container(
+            height: Get.height * .22,
+            width: Get.width,
+            decoration: const BoxDecoration(
+              color: Color(0xFFE7FFF4),
+            ),
+            child: interactionSection(),
+          )
+        ],
       ),
     );
   }
@@ -325,7 +307,47 @@ class _BookFoundPageState extends State<BookFoundPage> {
                 backgroundColor: Colors.white,
               ),
               onPressed: () {
-                getBookingData();
+                Get.defaultDialog(
+                  title: "Notes from Passenger:",
+                  titleStyle: GoogleFonts.varelaRound(
+                    fontSize: 14,
+                    color: Colors.green,
+                    fontWeight: FontWeight.bold,
+                  ),
+                  titlePadding: const EdgeInsets.symmetric(vertical: 20),
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 20),
+                  content: Container(
+                    height: Get.height * .1,
+                    width: Get.width,
+                    decoration: BoxDecoration(
+                      border: Border.all(
+                        color: Colors.black,
+                      ),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Text(
+                      notesFromPassenger,
+                      style: GoogleFonts.varelaRound(
+                        fontSize: 14,
+                        color: Colors.green,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                  confirm: Container(
+                    width: Get.width,
+                    padding: const EdgeInsets.only(bottom: 10.0),
+                    child: ElevatedButton(
+                      onPressed: () {
+                        Get.back();
+                      },
+                      style: ElevatedButton.styleFrom(
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(20))),
+                      child: const Text("Okay"),
+                    ),
+                  ),
+                );
               },
               child: Text(
                 "Notes from Passenger",
@@ -344,7 +366,7 @@ class _BookFoundPageState extends State<BookFoundPage> {
             ),
             const SizedBox(width: 5),
             Text(
-              "50.00",
+              "$price",
               style: GoogleFonts.varelaRound(
                 fontSize: 20,
                 fontWeight: FontWeight.bold,
@@ -423,7 +445,6 @@ class _BookFoundPageState extends State<BookFoundPage> {
         children: [
           GoogleMap(
             compassEnabled: false,
-            tiltGesturesEnabled: false,
             zoomControlsEnabled: false,
             zoomGesturesEnabled: false,
             myLocationEnabled: true,

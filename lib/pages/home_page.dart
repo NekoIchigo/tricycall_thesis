@@ -19,6 +19,8 @@ import '../controller/passenger_controller.dart';
 import '../widgets/drawer.dart';
 import 'package:group_radio_button/group_radio_button.dart';
 
+import 'driver_found_page.dart';
+
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
 
@@ -269,35 +271,33 @@ class _HomePageState extends State<HomePage> {
     return Scaffold(
       drawer: buildDrawer(),
       key: scaffoldState,
-      body: SingleChildScrollView(
-        child: Column(
-          children: [
-            _currentLocation == null
-                ? const Center(
-                    child: CircularProgressIndicator(
-                      color: Colors.green,
-                    ),
-                  )
-                : SizedBox(
-                    height: Get.height * .55,
-                    child: googleMap(),
+      body: Column(
+        children: [
+          _currentLocation == null
+              ? const Center(
+                  child: CircularProgressIndicator(
+                    color: Colors.green,
                   ),
-            Container(
-              height: Get.height * .25,
-              decoration: const BoxDecoration(
-                color: Colors.white,
-              ),
-              child: interactionSection(),
+                )
+              : SizedBox(
+                  height: Get.height * .55,
+                  child: googleMap(),
+                ),
+          Container(
+            height: Get.height * .25,
+            decoration: const BoxDecoration(
+              color: Colors.white,
             ),
-            Container(
-              height: Get.height * .20,
-              decoration: const BoxDecoration(
-                color: Color(0xFFE7FFF4),
-              ),
-              child: informationDetails(),
-            )
-          ],
-        ),
+            child: interactionSection(),
+          ),
+          Container(
+            height: Get.height * .20,
+            decoration: const BoxDecoration(
+              color: Color(0xFFE7FFF4),
+            ),
+            child: informationDetails(),
+          )
+        ],
       ),
     );
   }
@@ -622,7 +622,7 @@ class _HomePageState extends State<HomePage> {
                     const SizedBox(width: 10),
                     InkWell(
                       onTap: () {
-                        authController.testHealth();
+                        Get.to(() => const DriverFoundPage());
                       },
                       child: Text(
                         "${travelPrice?.toStringAsFixed(2) ?? "Price"} ",

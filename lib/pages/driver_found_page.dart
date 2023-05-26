@@ -10,6 +10,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:flutter_rating_bar/flutter_rating_bar.dart';
 
+import '../controller/passenger_controller.dart';
 import '../widgets/drawer.dart';
 import 'chat_page.dart';
 
@@ -22,11 +23,13 @@ class DriverFoundPage extends StatefulWidget {
 
 class _DriverFoundPageState extends State<DriverFoundPage> {
   GlobalKey<ScaffoldState> scaffoldState = GlobalKey<ScaffoldState>();
+  PassengerController passengerController = Get.find<PassengerController>();
 
   final Completer<GoogleMapController> _controller = Completer();
   List<LatLng> polylineCoordinates = [];
   Position? _currentLocation;
   Set<Marker> markers = <Marker>{};
+  String driverIdFromBooking = "";
 
   Future<void> _getCurrentPosition() async {
     final hasPermission = await authController.handleLocationPermission();
@@ -67,34 +70,6 @@ class _DriverFoundPageState extends State<DriverFoundPage> {
     currentLocIcon = BitmapDescriptor.fromBytes(currentIcon);
   }
 
-  trackLoc() async {
-    const LocationSettings locationSettings = LocationSettings(
-      accuracy: LocationAccuracy.high,
-      distanceFilter: 10,
-    );
-
-    debugPrint("curerntLoc = $_currentLocation");
-    Geolocator.getPositionStream(locationSettings: locationSettings)
-        .listen((Position? position) async {
-      _currentLocation = position;
-      // update marker
-      markers.add(Marker(
-        markerId: const MarkerId("currentLoc"),
-        icon: currentLocIcon,
-        position:
-            LatLng(_currentLocation!.latitude, _currentLocation!.longitude),
-      ));
-
-      // update location in database
-      await FirebaseFirestore.instance.collection('rides').doc('user1').set({
-        'latitude': _currentLocation!.latitude,
-        'longitude': _currentLocation!.longitude,
-        'name': 'john'
-      }, SetOptions(merge: true));
-    });
-    setState(() {});
-  }
-
   Future<void> mymap(AsyncSnapshot<QuerySnapshot> snapshot) async {
     GoogleMapController googleMapController = await _controller.future;
 
@@ -109,45 +84,60 @@ class _DriverFoundPageState extends State<DriverFoundPage> {
             zoom: 14.47)));
   }
 
+  getDriverIdFromBooking() async {
+    var id = passengerController.bookingId.value;
+    var bookingData =
+        await FirebaseFirestore.instance.collection('bookings').doc(id).get();
+
+    if (bookingData.exists) {
+      driverIdFromBooking = bookingData.data()!['driver_id'];
+    }
+  }
+
   @override
   void initState() {
     super.initState();
     setCustomMarkerIcon();
     _getCurrentPosition();
     centerCamera();
-    trackLoc();
+    getDriverIdFromBooking();
   }
 
   @override
   Widget build(BuildContext context) {
-    bool added = false;
-
     return Scaffold(
       drawer: buildDrawer(),
       key: scaffoldState,
-      body: StreamBuilder(
-          stream: FirebaseFirestore.instance.collection('rides').snapshots(),
-          builder: (context, AsyncSnapshot<QuerySnapshot> snapshot) {
-            if (added) {
-              mymap(snapshot);
-            }
+      body: StreamBuilder<DocumentSnapshot>(
+          stream: FirebaseFirestore.instance
+              .collection('driver_status')
+              .doc(
+                  driverIdFromBooking) // Replace 'driverIdFromBooking' with the actual driver ID
+              .snapshots(),
+          builder: (context, snapshot) {
             if (!snapshot.hasData) {
               return const Center(child: CircularProgressIndicator());
             }
 
+            final driverStatus = snapshot.data;
+
+            if (driverStatus == null || !driverStatus.exists) {
+              return const Text('Driver not found');
+            }
+
+            final driverData = driverStatus.data() as Map<String, dynamic>;
+            final driverLocation = LatLng(
+              driverData['latitude'] as double? ?? 0.0,
+              driverData['longitude'] as double? ?? 0.0,
+            );
+
             markers.add(
               Marker(
-                  position: LatLng(
-                    snapshot.data!.docs.singleWhere(
-                            (element) => element.id == "user1")['latitude'] ??
-                        "",
-                    snapshot.data!.docs.singleWhere(
-                            (element) => element.id == "user1")['longitude'] ??
-                        "",
-                  ),
-                  markerId: const MarkerId('id'),
-                  icon: BitmapDescriptor.defaultMarkerWithHue(
-                      BitmapDescriptor.hueMagenta)),
+                markerId: const MarkerId('driver'),
+                position: driverLocation,
+                icon: BitmapDescriptor.defaultMarkerWithHue(
+                    BitmapDescriptor.hueMagenta),
+              ),
             );
 
             return SizedBox(
@@ -164,7 +154,6 @@ class _DriverFoundPageState extends State<DriverFoundPage> {
                             zoomGesturesEnabled: false,
                             myLocationButtonEnabled: false,
                             onMapCreated: (mapContorller) {
-                              added = true;
                               _controller.complete(mapContorller);
                             },
                             initialCameraPosition: CameraPosition(

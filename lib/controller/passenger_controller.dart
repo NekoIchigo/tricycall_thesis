@@ -20,6 +20,7 @@ class PassengerController extends GetxController {
   // ignore: prefer_typing_uninitialized_variables
   var bookingInfo;
   RxBool isLocationsSet = false.obs;
+  var bookingId = "".obs;
 
   changeLocationSet(value) {
     isLocationsSet(value);
@@ -105,7 +106,9 @@ class PassengerController extends GetxController {
         await authController.buildLatLngFromAddress(destination);
 
     var docRef = FirebaseFirestore.instance.collection("bookings").doc();
-    // var docId = docRef.id;
+    var docId = docRef.id;
+
+    bookingId(docId);
 
     docRef.set({
       'user_id': userId,
@@ -118,16 +121,14 @@ class PassengerController extends GetxController {
           GeoPoint(sourceLatLng.latitude, sourceLatLng.longitude),
       'drop_off_location':
           GeoPoint(destinationLatLng.latitude, destinationLatLng.longitude),
+      'pick_up_text': sourceLocation,
+      'drop_off_text': destination,
       'status': 'ongoing' // ongoing, cancelled, finish
     }, SetOptions(merge: true)).then((value) {
       // isProfileUploading(false);
 
       // Get.to(() => const HomePage());
     });
-  }
-
-  showBookingInfo() async {
-    SharedPreferences localStorage = await SharedPreferences.getInstance();
   }
 }
   
