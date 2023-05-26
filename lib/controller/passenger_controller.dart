@@ -10,6 +10,7 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 // ignore: depend_on_referenced_packages, library_prefixes
 import 'package:path/path.dart' as Path;
 import 'package:shared_preferences/shared_preferences.dart';
+import '../models/tariff_calculator.dart';
 import '../models/user_model.dart';
 import '../pages/home_page.dart';
 import 'auth_controller.dart';
@@ -131,7 +132,6 @@ class PassengerController extends GetxController {
     });
   }
 }
-  
 
 // this query gets a stream of user records and deserialize it 
 // to a stream of UserRecord object 

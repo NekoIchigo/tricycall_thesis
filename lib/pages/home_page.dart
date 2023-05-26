@@ -16,6 +16,7 @@ import 'package:tricycall_thesis/pages/select_locations_page.dart';
 
 import '../controller/auth_controller.dart';
 import '../controller/passenger_controller.dart';
+import '../models/tariff_calculator.dart';
 import '../widgets/drawer.dart';
 import 'package:group_radio_button/group_radio_button.dart';
 
@@ -188,7 +189,8 @@ class _HomePageState extends State<HomePage> {
     setState(() {
       _placeDistance = totalDistance.toStringAsFixed(2);
       localStorage.setString("total_distance", _placeDistance);
-      getPrice(10);
+      travelPrice = TariffCalculator.calculateTariff(
+          totalDistance.toInt(), 3, true, true);
       debugPrint('DISTANCE: $_placeDistance km');
       minute = ((totalDistance / 20) * 60);
       seconds = minute! - minute!.toInt();
@@ -218,13 +220,6 @@ class _HomePageState extends State<HomePage> {
     getPolyPoints(sourceLocation, destination);
 
     setState(() {});
-  }
-
-  getPrice(perKM) async {
-    SharedPreferences localStorage = await SharedPreferences.getInstance();
-    travelPrice = perKM * double.parse(_placeDistance);
-    debugPrint("price $travelPrice");
-    localStorage.setDouble("travel_price", travelPrice!);
   }
 
   getCurrentUserUid() async {
