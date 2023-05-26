@@ -129,10 +129,14 @@ class _BookFoundPageState extends State<BookFoundPage> {
     }
   }
 
+  getUid() async {
+    userUid = await authController.getCurrentUserUid();
+  }
+
   @override
   initState() {
     super.initState();
-    userUid = authController.getCurrentUserUid();
+    getUid();
     _getCurrentPosition();
     setCustomMarkerIcon();
     // getPaymentMethod();

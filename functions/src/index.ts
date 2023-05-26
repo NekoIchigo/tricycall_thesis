@@ -104,18 +104,12 @@ export const driverResponse = functions.https.onRequest(async (req, res) => {
 
   const bookingDataSnapshot = await admin.firestore()
     .collection("bookings")
-    .doc(bookingId)
-    .get();
+    .doc(bookingId).get();
 
   if (response === "declined") {
     try {
-      // Get the pick-up location from the booking data
-      const bookingData = bookingDataSnapshot.data();
-      const pickupLocation = bookingData?.pick_up_location;
+      const pickupLocation = bookingDataSnapshot.data()?.pick_up_location;
 
-      if (!pickupLocation) {
-        throw new Error("Invalid booking data");
-      }
       // Get all online drivers except the one who declined
       const onlineDriversSnapshot = await admin
         .firestore()
@@ -136,20 +130,52 @@ export const driverResponse = functions.https.onRequest(async (req, res) => {
         const distance = geolib.getDistance(pickupLocation, driverLocation);
 
         if (nearestDriverDistance === null ||
-           distance < nearestDriverDistance) {
+          distance < nearestDriverDistance) {
           nearestDriverId = driverSnapshot.id;
           nearestDriverDistance = distance;
         }
       });
 
       if (nearestDriverId) {
-        // Update the bookings document with the new driver ID
-        await admin
-          .firestore()
-          .collection("bookings")
-          .doc(bookingId)
-          .update({driver_id: nearestDriverId});
+        const driverToken = await getDriverToken(nearestDriverId);
+        const notificationPayload = {
+          token: driverToken,
+          notification: {
+            title: "New Booking",
+            body: "You have a new booking request",
+          },
+          data: {
+            bookingData: bookingId,
+          },
+        };
+        await sendNotificationToDevice(notificationPayload);
       }
+
+      res.status(200).send("OK");
+    } catch (error) {
+      console.error("Error:", error);
+      res.status(500).send("Error occurred");
+    }
+  } else if (response === "accepted") {
+    try {
+      await admin.firestore()
+        .collection("driver_status")
+        .doc(driverId)
+        .update({status: "booked"});
+
+      // Send notification to the passenger
+      const passengerToken = bookingDataSnapshot.data()?.passenger_token;
+      const notificationPayload = {
+        token: passengerToken,
+        notification: {
+          title: "Driver Found",
+          body: "A driver has accepted your booking",
+        },
+        data: {
+          driverId: driverId,
+        },
+      };
+      await sendNotificationToDevice(notificationPayload);
 
       res.status(200).send("OK");
     } catch (error) {
@@ -160,3 +186,4 @@ export const driverResponse = functions.https.onRequest(async (req, res) => {
     res.status(200).send("OK");
   }
 });
+

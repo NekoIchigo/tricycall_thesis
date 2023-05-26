@@ -137,14 +137,18 @@ class _DriverHomePageState extends State<DriverHomePage> {
     });
   }
 
+  getUid() async {
+    userUid = await authController.getCurrentUserUid();
+  }
+
   @override
   void initState() {
     super.initState();
-    userUid = authController.getCurrentUserUid();
+    getUid();
     _getCurrentPosition();
     centerCamera();
-    Future.delayed(Duration(milliseconds: 500), () {
-      initDriverStatus();
+    Future.delayed(Duration(milliseconds: 500)).then((_) async {
+      await initDriverStatus();
       trackLoc();
     });
   }

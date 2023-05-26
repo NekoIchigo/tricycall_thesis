@@ -14,9 +14,12 @@ import '../models/tariff_calculator.dart';
 import '../models/user_model.dart';
 import '../pages/home_page.dart';
 import 'auth_controller.dart';
+import 'notification_controller.dart';
 
 class PassengerController extends GetxController {
   AuthController authController = Get.find<AuthController>();
+  NotificationController notificationController =
+      Get.find<NotificationController>();
   RxBool isProfileUploading = false.obs;
   // ignore: prefer_typing_uninitialized_variables
   var bookingInfo;
@@ -100,6 +103,7 @@ class PassengerController extends GetxController {
     String destination = localStorage.getString("destination")!;
     String totalDistance = localStorage.getString("total_distance")!;
     double travelPrice = localStorage.getDouble("travel_price")!;
+    String? token = notificationController.fcmToken;
 
     LatLng sourceLatLng =
         await authController.buildLatLngFromAddress(sourceLocation);
@@ -124,7 +128,8 @@ class PassengerController extends GetxController {
           GeoPoint(destinationLatLng.latitude, destinationLatLng.longitude),
       'pick_up_text': sourceLocation,
       'drop_off_text': destination,
-      'status': 'ongoing' // ongoing, cancelled, finish
+      'passenger_token': token,
+      'status': 'waiting' // waiting, ongoing, cancelled, finish
     }, SetOptions(merge: true)).then((value) {
       // isProfileUploading(false);
 

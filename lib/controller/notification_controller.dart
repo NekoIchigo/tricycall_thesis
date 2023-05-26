@@ -1,5 +1,6 @@
 import 'package:get/get.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:tricycall_thesis/pages/driver_found_page.dart';
 
 import '../pages/driver/booking_found_page.dart';
 
@@ -72,16 +73,29 @@ class NotificationController extends GetxController {
     }
 
     if (data.isNotEmpty) {
-      // Handle the custom data payload
-      // Access the data fields using the data map
-      final bookingData = data['bookingData'];
+      if (notification!.title == "Driver Found") {
+        // Handle the custom data payload
+        // Access the data fields using the data map
+        final bookingData = data['driverId'];
 
-      // Do something with the booking data
-      // For example, update app state or perform a specific action based on the data
-      Get.to(() => const BookFoundPage());
-      Get.snackbar("Booking Data", bookingData.toString());
+        // Do something with the booking data
+        // For example, update app state or perform a specific action based on the data
+        Get.to(() => const DriverFoundPage());
+        Get.snackbar("Driver ID", bookingData.toString());
 
-      updateBookingId(bookingData);
+        updateBookingId(bookingData);
+      } else if (notification.title == "New Booking") {
+        // Handle the custom data payload
+        // Access the data fields using the data map
+        final bookingData = data['bookingData'];
+
+        // Do something with the booking data
+        // For example, update app state or perform a specific action based on the data
+        Get.to(() => const BookFoundPage());
+        Get.snackbar("Booking Data", bookingData.toString());
+
+        updateBookingId(bookingData);
+      }
     }
   }
 
