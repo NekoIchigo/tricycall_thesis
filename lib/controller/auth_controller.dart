@@ -139,6 +139,11 @@ class AuthController extends GetxController {
   }
 
   // ------------------------------------------- UNIVERSAL FUNCTIONS -------------------------------
+  getCurrentUserUid() async {
+    User? user = FirebaseAuth.instance.currentUser;
+    return user!.uid;
+  }
+
   Future<bool> handleLocationPermission() async {
     bool serviceEnabled;
     LocationPermission permission;

@@ -9,6 +9,7 @@ import 'package:geolocator/geolocator.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:tricycall_thesis/controller/driver_controller.dart';
 
 import '../../controller/auth_controller.dart';
 import '../../controller/notification_controller.dart';
@@ -28,7 +29,9 @@ class _BookFoundPageState extends State<BookFoundPage> {
   final Completer<GoogleMapController> _controller = Completer();
   NotificationController notificationController =
       Get.find<NotificationController>();
+  DriverController driverController = Get.find<DriverController>();
 
+  String userUid = "", bookingId = "";
   GlobalKey<ScaffoldState> scaffoldState = GlobalKey<ScaffoldState>();
   Position? _currentLocation;
   String sourceText = "", destinationText = "", notesFromPassenger = "";
@@ -84,7 +87,7 @@ class _BookFoundPageState extends State<BookFoundPage> {
   }
 
   getBookingData() async {
-    var bookingId = notificationController.bookingId.value;
+    bookingId = notificationController.bookingId.value;
     var bookingSnapshot = await FirebaseFirestore.instance
         .collection("bookings")
         .doc(bookingId.toString())
@@ -129,6 +132,7 @@ class _BookFoundPageState extends State<BookFoundPage> {
   @override
   initState() {
     super.initState();
+    userUid = authController.getCurrentUserUid();
     _getCurrentPosition();
     setCustomMarkerIcon();
     // getPaymentMethod();
@@ -378,7 +382,10 @@ class _BookFoundPageState extends State<BookFoundPage> {
           width: Get.width,
           margin: const EdgeInsets.symmetric(horizontal: 20),
           child: OutlinedButton(
-            onPressed: () {},
+            onPressed: () {
+              driverController.sendDriverResponse(
+                  userUid, bookingId, "accepted");
+            },
             style: OutlinedButton.styleFrom(
               side: const BorderSide(color: Colors.black),
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
@@ -419,7 +426,10 @@ class _BookFoundPageState extends State<BookFoundPage> {
           width: Get.width,
           margin: const EdgeInsets.symmetric(horizontal: 20),
           child: OutlinedButton(
-            onPressed: () {},
+            onPressed: () {
+              driverController.sendDriverResponse(
+                  userUid, bookingId, "declined");
+            },
             style: OutlinedButton.styleFrom(
               side: const BorderSide(color: Colors.black),
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),

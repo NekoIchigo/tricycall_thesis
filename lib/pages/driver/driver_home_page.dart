@@ -82,11 +82,6 @@ class _DriverHomePageState extends State<DriverHomePage> {
     currentLocIcon = BitmapDescriptor.fromBytes(currentIcon);
   }
 
-  getCurrentUserUid() async {
-    User? user = FirebaseAuth.instance.currentUser;
-    userUid = user!.uid;
-  }
-
   initDriverStatus() async {
     String? token = notificationController.fcmToken;
     await FirebaseFirestore.instance
@@ -145,7 +140,7 @@ class _DriverHomePageState extends State<DriverHomePage> {
   @override
   void initState() {
     super.initState();
-    getCurrentUserUid();
+    userUid = authController.getCurrentUserUid();
     _getCurrentPosition();
     centerCamera();
     Future.delayed(Duration(milliseconds: 500), () {

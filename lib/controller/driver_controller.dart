@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:cloud_functions/cloud_functions.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
@@ -102,5 +103,25 @@ class DriverController extends GetxController {
         .listen((event) {
       myUser.value = UserModel.fromJson(event.data()!);
     });
+  }
+
+  final HttpsCallable driverResponseCallable =
+      FirebaseFunctions.instance.httpsCallable('driverResponse');
+
+  void sendDriverResponse(
+      String driverId, String bookingId, String response) async {
+    try {
+      final result = await driverResponseCallable.call(<String, dynamic>{
+        'driverId': driverId,
+        'bookingId': bookingId,
+        'response': response,
+      });
+      // Handle the response from the Cloud Function if needed
+      Get.snackbar("Test", 'Driver response sent successfully');
+      Get.snackbar("Test", result.data);
+    } catch (e) {
+      // Handle any errors that occurred during the function call
+      Get.snackbar("error", 'Error sending driver response: $e');
+    }
   }
 }
