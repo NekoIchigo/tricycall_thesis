@@ -6,6 +6,8 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
 
 // ignore: depend_on_referenced_packages, library_prefixes
 import 'package:path/path.dart' as Path;
@@ -105,23 +107,39 @@ class DriverController extends GetxController {
     });
   }
 
-  final HttpsCallable driverResponseCallable =
-      FirebaseFunctions.instance.httpsCallable('driverResponse');
+  Future<void> testHealth() async {
+    HttpsCallable callable =
+        FirebaseFunctions.instance.httpsCallable('checkHelth');
 
-  void sendDriverResponse(
+    final response = await callable.call();
+    if (response.data != null) {
+      print(response.data);
+    }
+  }
+
+// Make an HTTP POST request to the Cloud Function endpoint
+  Future<void> sendDriverResponse(
       String driverId, String bookingId, String response) async {
+    const url =
+        'https://us-central1-tricycallthesis.cloudfunctions.net/driverResponse';
+    final headers = {'Content-Type': 'application/json'};
+    final body = jsonEncode({
+      'driverId': driverId,
+      'bookingId': bookingId,
+      'response': response,
+    });
+
     try {
-      final result = await driverResponseCallable.call(<String, dynamic>{
-        'driverId': driverId,
-        'bookingId': bookingId,
-        'response': response,
-      });
-      // Handle the response from the Cloud Function if needed
-      Get.snackbar("Test", 'Driver response sent successfully');
-      Get.snackbar("Test", result.data);
-    } catch (e) {
-      // Handle any errors that occurred during the function call
-      Get.snackbar("error", 'Error sending driver response: $e');
+      final response =
+          await http.post(Uri.parse(url), headers: headers, body: body);
+
+      if (response.statusCode == 200) {
+        print('Driver response sent successfully');
+      } else {
+        print('Failed to send driver response. Error: ${response.body}');
+      }
+    } catch (error) {
+      print('Error sending driver response: $error');
     }
   }
 }

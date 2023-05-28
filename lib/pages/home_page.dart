@@ -15,6 +15,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:tricycall_thesis/pages/select_locations_page.dart';
 
 import '../controller/auth_controller.dart';
+import '../controller/notification_controller.dart';
 import '../controller/passenger_controller.dart';
 import '../models/tariff_calculator.dart';
 import '../widgets/drawer.dart';
@@ -36,6 +37,8 @@ class _HomePageState extends State<HomePage> {
   final Completer<GoogleMapController> _controller = Completer();
   AuthController authController = Get.find<AuthController>();
   PassengerController passengerController = Get.find<PassengerController>();
+  NotificationController notificationController =
+      Get.find<NotificationController>();
 
   String paymentMethod = "CASH";
 
@@ -157,9 +160,9 @@ class _HomePageState extends State<HomePage> {
     );
     // print("polylineres = $result");
     if (result.points.isNotEmpty) {
-      result.points.forEach((PointLatLng point) {
+      for (var point in result.points) {
         polylineCoordinates.add(LatLng(point.latitude, point.longitude));
-      });
+      }
       // Defining an ID
       PolylineId id = PolylineId('poly');
 
@@ -640,7 +643,10 @@ class _HomePageState extends State<HomePage> {
             Expanded(
               child: ElevatedButton(
                 onPressed: () {
-                  isBookClicked ? null : passengerController.storeBookingInfo();
+                  String? token = notificationController.fcmToken;
+                  isBookClicked
+                      ? null
+                      : passengerController.storeBookingInfo(token);
                   setState(() {
                     isBookClicked = !isBookClicked;
                   });

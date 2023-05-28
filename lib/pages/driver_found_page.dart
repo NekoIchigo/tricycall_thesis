@@ -4,12 +4,14 @@ import 'dart:ui' as ui;
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_polyline_points/flutter_polyline_points.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:flutter_rating_bar/flutter_rating_bar.dart';
 
+import '../controller/notification_controller.dart';
 import '../controller/passenger_controller.dart';
 import '../widgets/drawer.dart';
 import 'chat_page.dart';
@@ -22,11 +24,17 @@ class DriverFoundPage extends StatefulWidget {
 }
 
 class _DriverFoundPageState extends State<DriverFoundPage> {
+  final googleApiKey = "AIzaSyBFPJ9b4hwLh_CwUAPEe8aMIGT4deavGCk";
+
   GlobalKey<ScaffoldState> scaffoldState = GlobalKey<ScaffoldState>();
   PassengerController passengerController = Get.find<PassengerController>();
+  NotificationController notificationController =
+      Get.find<NotificationController>();
 
   final Completer<GoogleMapController> _controller = Completer();
   List<LatLng> polylineCoordinates = [];
+  Map<PolylineId, Polyline> polylines = {};
+
   Position? _currentLocation;
   Set<Marker> markers = <Marker>{};
   String driverIdFromBooking = "";
@@ -63,11 +71,12 @@ class _DriverFoundPageState extends State<DriverFoundPage> {
   }
 
   BitmapDescriptor currentLocIcon = BitmapDescriptor.defaultMarker;
+  BitmapDescriptor driverLocIcon = BitmapDescriptor.defaultMarker;
 
   void setCustomMarkerIcon() async {
-    final Uint8List currentIcon = await authController.getBytesFromAsset(
+    final Uint8List driverIcon = await authController.getBytesFromAsset(
         'assets/images/tricycle_icon.png', 50);
-    currentLocIcon = BitmapDescriptor.fromBytes(currentIcon);
+    driverLocIcon = BitmapDescriptor.fromBytes(driverIcon);
   }
 
   Future<void> mymap(AsyncSnapshot<QuerySnapshot> snapshot) async {
@@ -94,6 +103,37 @@ class _DriverFoundPageState extends State<DriverFoundPage> {
     }
   }
 
+  void getPolyPoints(sourceLocation, destination) async {
+    PolylinePoints polylinePoints = PolylinePoints();
+    PolylineResult result = await polylinePoints.getRouteBetweenCoordinates(
+      googleApiKey,
+      PointLatLng(sourceLocation.latitude, sourceLocation.longitude),
+      PointLatLng(destination.latitude, destination.longitude),
+    );
+    // print("polylineres = $result");
+    if (result.points.isNotEmpty) {
+      for (var point in result.points) {
+        polylineCoordinates.add(
+          LatLng(point.latitude, point.longitude),
+        );
+      }
+      // Defining an ID
+      PolylineId id = PolylineId('poly');
+
+      // Initializing Polyline
+      Polyline polyline = Polyline(
+        polylineId: id,
+        color: Colors.red,
+        points: polylineCoordinates,
+        width: 3,
+      );
+
+      // Adding the polyline to the map
+      polylines[id] = polyline;
+      setState(() {});
+    }
+  }
+
   @override
   void initState() {
     super.initState();
@@ -111,8 +151,8 @@ class _DriverFoundPageState extends State<DriverFoundPage> {
       body: StreamBuilder<DocumentSnapshot>(
           stream: FirebaseFirestore.instance
               .collection('driver_status')
-              .doc(
-                  driverIdFromBooking) // Replace 'driverIdFromBooking' with the actual driver ID
+              .doc(notificationController.driverId.value
+                  .toString()) // Replace 'driverIdFromBooking' with the actual driver ID
               .snapshots(),
           builder: (context, snapshot) {
             if (!snapshot.hasData) {
@@ -130,13 +170,16 @@ class _DriverFoundPageState extends State<DriverFoundPage> {
               driverData['latitude'] as double? ?? 0.0,
               driverData['longitude'] as double? ?? 0.0,
             );
+            final destination =
+                LatLng(_currentLocation!.latitude, _currentLocation!.longitude);
+
+            getPolyPoints(driverLocation, destination);
 
             markers.add(
               Marker(
                 markerId: const MarkerId('driver'),
                 position: driverLocation,
-                icon: BitmapDescriptor.defaultMarkerWithHue(
-                    BitmapDescriptor.hueMagenta),
+                icon: driverLocIcon,
               ),
             );
 
@@ -161,14 +204,7 @@ class _DriverFoundPageState extends State<DriverFoundPage> {
                                   _currentLocation!.longitude),
                               zoom: 15,
                             ),
-                            polylines: {
-                              Polyline(
-                                polylineId: const PolylineId("route"),
-                                points: polylineCoordinates,
-                                color: Colors.green,
-                                width: 6,
-                              ),
-                            },
+                            polylines: Set<Polyline>.of(polylines.values),
                             markers: markers,
                           )
                         : const CircularProgressIndicator(),

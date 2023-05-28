@@ -50,6 +50,7 @@ class _DriverHomePageState extends State<DriverHomePage> {
         .then((Position position) async {
       setState(() {
         _currentLocation = position;
+        initDriverStatus();
       });
     }).catchError((e) {
       debugPrint(e.toString());
@@ -147,10 +148,7 @@ class _DriverHomePageState extends State<DriverHomePage> {
     getUid();
     _getCurrentPosition();
     centerCamera();
-    Future.delayed(Duration(milliseconds: 500)).then((_) async {
-      await initDriverStatus();
-      trackLoc();
-    });
+    trackLoc();
   }
 
   @override

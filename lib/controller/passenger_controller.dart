@@ -10,16 +10,13 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 // ignore: depend_on_referenced_packages, library_prefixes
 import 'package:path/path.dart' as Path;
 import 'package:shared_preferences/shared_preferences.dart';
-import '../models/tariff_calculator.dart';
 import '../models/user_model.dart';
 import '../pages/home_page.dart';
 import 'auth_controller.dart';
-import 'notification_controller.dart';
 
 class PassengerController extends GetxController {
   AuthController authController = Get.find<AuthController>();
-  NotificationController notificationController =
-      Get.find<NotificationController>();
+
   RxBool isProfileUploading = false.obs;
   // ignore: prefer_typing_uninitialized_variables
   var bookingInfo;
@@ -94,7 +91,7 @@ class PassengerController extends GetxController {
     });
   }
 
-  storeBookingInfo() async {
+  storeBookingInfo(token) async {
     SharedPreferences localStorage = await SharedPreferences.getInstance();
     String userId = localStorage.getString("user_uid") ?? "";
     String paymentMethod = localStorage.getString("payment_method") ?? "CASH";
@@ -103,7 +100,6 @@ class PassengerController extends GetxController {
     String destination = localStorage.getString("destination")!;
     String totalDistance = localStorage.getString("total_distance")!;
     double travelPrice = localStorage.getDouble("travel_price")!;
-    String? token = notificationController.fcmToken;
 
     LatLng sourceLatLng =
         await authController.buildLatLngFromAddress(sourceLocation);

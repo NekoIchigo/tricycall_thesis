@@ -36,10 +36,11 @@ class _BookFoundPageState extends State<BookFoundPage> {
   Position? _currentLocation;
   String sourceText = "", destinationText = "", notesFromPassenger = "";
   // ignore: prefer_typing_uninitialized_variables
-  var price;
+  var price, passengerToken;
 
   List<LatLng> polylineCoordinates = [];
   Set<Marker> markers = <Marker>{};
+  Map<PolylineId, Polyline> polylines = {};
 
   BitmapDescriptor sourceIcon = BitmapDescriptor.defaultMarker,
       destinationIcon = BitmapDescriptor.defaultMarker,
@@ -82,6 +83,19 @@ class _BookFoundPageState extends State<BookFoundPage> {
           LatLng(point.latitude, point.longitude),
         );
       }
+      // Defining an ID
+      PolylineId id = PolylineId('poly');
+
+      // Initializing Polyline
+      Polyline polyline = Polyline(
+        polylineId: id,
+        color: Colors.red,
+        points: polylineCoordinates,
+        width: 3,
+      );
+
+      // Adding the polyline to the map
+      polylines[id] = polyline;
       setState(() {});
     }
   }
@@ -105,7 +119,7 @@ class _BookFoundPageState extends State<BookFoundPage> {
         sourceText = bookingData['pick_up_text'];
         destinationText = bookingData['drop_off_text'];
         notesFromPassenger = bookingData['note_to_driver'] ?? "No notes";
-
+        passengerToken = bookingData['passenger_token'];
         // sourceText = await authController.getAddressFromLatLng(
         //     sourceLocation.latitude, sourceLocation.longitude);
         // destinationText = await authController.getAddressFromLatLng(
@@ -387,8 +401,8 @@ class _BookFoundPageState extends State<BookFoundPage> {
           margin: const EdgeInsets.symmetric(horizontal: 20),
           child: OutlinedButton(
             onPressed: () {
-              driverController.sendDriverResponse(
-                  userUid, bookingId, "accepted");
+              print("uid: $userUid, bookingId: $bookingId, Accepted");
+              notificationController.sendNotification(userUid, passengerToken);
             },
             style: OutlinedButton.styleFrom(
               side: const BorderSide(color: Colors.black),
@@ -431,6 +445,7 @@ class _BookFoundPageState extends State<BookFoundPage> {
           margin: const EdgeInsets.symmetric(horizontal: 20),
           child: OutlinedButton(
             onPressed: () {
+              print("uid: $userUid, bookingId: $bookingId, Declined");
               driverController.sendDriverResponse(
                   userUid, bookingId, "declined");
             },
@@ -470,14 +485,7 @@ class _BookFoundPageState extends State<BookFoundPage> {
                   _currentLocation!.latitude, _currentLocation!.longitude),
               zoom: 15,
             ),
-            polylines: {
-              Polyline(
-                polylineId: const PolylineId("route"),
-                points: polylineCoordinates,
-                color: Colors.green,
-                width: 6,
-              ),
-            },
+            polylines: Set<Polyline>.of(polylines.values),
             markers: markers,
           ),
           Positioned(

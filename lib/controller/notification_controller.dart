@@ -1,19 +1,28 @@
+import 'dart:convert';
+
 import 'package:get/get.dart';
+import 'package:http/http.dart' as http;
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:tricycall_thesis/pages/driver_found_page.dart';
 
 import '../pages/driver/booking_found_page.dart';
 
 class NotificationController extends GetxController {
+  // <---------------------------------- Handles Receiving of notification
   // create firebase messaging instance
   final FirebaseMessaging _firebaseMessaging = FirebaseMessaging.instance;
   String? _fcmToken;
   var bookingId = "".obs;
+  var driverId = "".obs;
 
   String? get fcmToken => _fcmToken;
 
   updateBookingId(String? id) {
     bookingId(id);
+  }
+
+  updateDriverId(String? id) {
+    driverId(id);
   }
 
   @override
@@ -58,6 +67,7 @@ class NotificationController extends GetxController {
     // Extract the notification data
     final notification = message.notification;
     final data = message.data;
+    var user = "";
 
     // Handle the notification and data
     if (notification != null) {
@@ -69,32 +79,27 @@ class NotificationController extends GetxController {
       // For example, show a local notification or update app state
       // You can use packages like flutter_local_notifications for local notifications
       Get.snackbar(title!, body!);
-      // Print the notification details for debugging-
+      // Print the notification details for debugging
     }
 
     if (data.isNotEmpty) {
-      if (notification!.title == "Driver Found") {
-        // Handle the custom data payload
-        // Access the data fields using the data map
-        final bookingData = data['driverId'];
+      // Handle the custom data payload
+      // Access the data fields using the data map
+      final bookingData = data['bookingData'];
+      user = data['user'];
 
-        // Do something with the booking data
-        // For example, update app state or perform a specific action based on the data
-        Get.to(() => const DriverFoundPage());
-        Get.snackbar("Driver ID", bookingData.toString());
-
-        updateBookingId(bookingData);
-      } else if (notification.title == "New Booking") {
-        // Handle the custom data payload
-        // Access the data fields using the data map
-        final bookingData = data['bookingData'];
-
-        // Do something with the booking data
-        // For example, update app state or perform a specific action based on the data
+      // Do something with the booking data
+      // For example, update app state or perform a specific action based on the data
+      if (user == "driver") {
         Get.to(() => const BookFoundPage());
         Get.snackbar("Booking Data", bookingData.toString());
 
         updateBookingId(bookingData);
+      } else if (user == "passenger") {
+        var driverID = data['driverId'];
+        Get.to(() => const DriverFoundPage());
+        Get.snackbar("Driver ID", bookingData.toString());
+        updateDriverId(driverID);
       }
     }
   }
@@ -102,5 +107,62 @@ class NotificationController extends GetxController {
   Future<void> _firebaseMessagingBackgroundHandler(
       RemoteMessage message) async {
     _handleMessage(message);
+  }
+
+  // <------------------------------------- Handles Sending of Notification ---------------------------------------------->
+
+  // Server key from Firebase Console > Project Settings > Cloud Messaging
+  final String serverKey =
+      'AAAAdSsHtYs:APA91bHD0EW_KWDYQ-_jRt-xAsR93g8C8e7A2J8c8M1b0IHmVIc-8BOnprduYNQTnL2H_Sz2gZq1z1ZMJYETsy2KQqtWDNdr7fR41ontyHR9rZfTyF5zHPKWzlgykqbSL23IvyUlyffi';
+
+  // Firebase Cloud Messaging endpoint
+  final String fcmEndpoint = 'https://fcm.googleapis.com/fcm/send';
+
+  Future<void> sendNotification(driverId, passengerToken) async {
+    // Define your notification payload
+    final Map<String, dynamic> notification = {
+      'title': 'Driver Found',
+      'body': 'The Driver is on his way to pick you up',
+    };
+
+    // Define the message data payload
+    final Map<String, dynamic> data = {
+      'user': 'passenger',
+      'driverId': driverId,
+    };
+
+    // Define the FCM message
+    final Map<String, dynamic> fcmMessage = {
+      'notification': notification,
+      'data': data,
+      'priority': 'high',
+      'to': passengerToken, // or 'token': 'DEVICE_TOKEN' for specific device
+    };
+
+    // Convert the FCM message to JSON format
+    final String fcmMessageJson = jsonEncode(fcmMessage);
+
+    // Create the HTTP headers
+    final Map<String, String> headers = {
+      'Content-Type': 'application/json',
+      'Authorization': 'key=$serverKey',
+    };
+
+    try {
+      // Send the HTTP POST request to the FCM endpoint
+      final http.Response response = await http.post(
+        Uri.parse(fcmEndpoint),
+        headers: headers,
+        body: fcmMessageJson,
+      );
+
+      if (response.statusCode == 200) {
+        print('Notification sent successfully');
+      } else {
+        print('Failed to send notification. Error: ${response.body}');
+      }
+    } catch (e) {
+      print('Error sending notification: $e');
+    }
   }
 }

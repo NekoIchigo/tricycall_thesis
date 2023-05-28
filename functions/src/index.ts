@@ -39,6 +39,11 @@ export const bookRide = functions.firestore.document("bookings/{bookingId}")
     // Assign the nearest driver to the booking
     if (nearestDriverId) {
       await snapshot.ref.update({driver_id: nearestDriverId});
+      // Update the driver's status to "booked"
+      await admin.firestore()
+        .collection("driver_status")
+        .doc(nearestDriverId)
+        .update({status: "booked"});
     }
 
     // Send notification to the nearest driver
@@ -54,6 +59,7 @@ export const bookRide = functions.firestore.document("bookings/{bookingId}")
         data: {
           // Include the booking data as a JSON string
           bookingData: bookingId,
+          user: "driver",
         },
       };
 
@@ -102,12 +108,13 @@ async function sendNotificationToDevice(
 export const driverResponse = functions.https.onRequest(async (req, res) => {
   const {driverId, bookingId, response} = req.body;
 
-  const bookingDataSnapshot = await admin.firestore()
-    .collection("bookings")
-    .doc(bookingId).get();
+  try {
+    const bookingDataSnapshot = await admin.firestore()
+      .collection("bookings")
+      .doc(bookingId)
+      .get();
 
-  if (response === "declined") {
-    try {
+    if (response === "declined") {
       const pickupLocation = bookingDataSnapshot.data()?.pick_up_location;
 
       // Get all online drivers except the one who declined
@@ -118,6 +125,7 @@ export const driverResponse = functions.https.onRequest(async (req, res) => {
         .where("driverId", "!=", driverId)
         .get();
 
+      // Calculate the distance between pickup location and each online driver
       let nearestDriverId: string | null = null;
       let nearestDriverDistance: number | null = null;
 
@@ -127,7 +135,8 @@ export const driverResponse = functions.https.onRequest(async (req, res) => {
           latitude: driverData.latitude,
           longitude: driverData.longitude,
         };
-        const distance = geolib.getDistance(pickupLocation, driverLocation);
+        const distance: number = geolib.
+          getDistance(pickupLocation, driverLocation);
 
         if (nearestDriverDistance === null ||
           distance < nearestDriverDistance) {
@@ -136,7 +145,9 @@ export const driverResponse = functions.https.onRequest(async (req, res) => {
         }
       });
 
+
       if (nearestDriverId) {
+        // Send booking offer to the new driver
         const driverToken = await getDriverToken(nearestDriverId);
         const notificationPayload = {
           token: driverToken,
@@ -146,44 +157,24 @@ export const driverResponse = functions.https.onRequest(async (req, res) => {
           },
           data: {
             bookingData: bookingId,
+            user: "driver",
           },
         };
         await sendNotificationToDevice(notificationPayload);
       }
 
-      res.status(200).send("OK");
-    } catch (error) {
-      console.error("Error:", error);
-      res.status(500).send("Error occurred");
-    }
-  } else if (response === "accepted") {
-    try {
+      // Update the status of the driver who declined to "online"
       await admin.firestore()
         .collection("driver_status")
         .doc(driverId)
-        .update({status: "booked"});
-
-      // Send notification to the passenger
-      const passengerToken = bookingDataSnapshot.data()?.passenger_token;
-      const notificationPayload = {
-        token: passengerToken,
-        notification: {
-          title: "Driver Found",
-          body: "A driver has accepted your booking",
-        },
-        data: {
-          driverId: driverId,
-        },
-      };
-      await sendNotificationToDevice(notificationPayload);
+        .update({status: "online"});
 
       res.status(200).send("OK");
-    } catch (error) {
-      console.error("Error:", error);
-      res.status(500).send("Error occurred");
+    } else {
+      res.status(200).send("OK");
     }
-  } else {
-    res.status(200).send("OK");
+  } catch (error) {
+    console.error("Error:", error);
+    res.status(500).send("Error occurred");
   }
 });
-
