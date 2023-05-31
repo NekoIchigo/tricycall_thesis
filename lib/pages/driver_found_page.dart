@@ -75,7 +75,7 @@ class _DriverFoundPageState extends State<DriverFoundPage> {
 
   void setCustomMarkerIcon() async {
     final Uint8List driverIcon = await authController.getBytesFromAsset(
-        'assets/images/tricycle_icon.png', 50);
+        'assets/images/tricycle_icon.png', 80);
     driverLocIcon = BitmapDescriptor.fromBytes(driverIcon);
   }
 
@@ -103,35 +103,24 @@ class _DriverFoundPageState extends State<DriverFoundPage> {
     }
   }
 
-  void getPolyPoints(sourceLocation, destination) async {
-    PolylinePoints polylinePoints = PolylinePoints();
+  PolylinePoints polylinePoints = PolylinePoints();
+
+  Future<List<LatLng>> getPolylinePoints(
+      LatLng sourceLocation, LatLng destination) async {
+    List<LatLng> polylineCoordinates = [];
     PolylineResult result = await polylinePoints.getRouteBetweenCoordinates(
       googleApiKey,
       PointLatLng(sourceLocation.latitude, sourceLocation.longitude),
       PointLatLng(destination.latitude, destination.longitude),
     );
-    // print("polylineres = $result");
+
     if (result.points.isNotEmpty) {
       for (var point in result.points) {
-        polylineCoordinates.add(
-          LatLng(point.latitude, point.longitude),
-        );
+        polylineCoordinates.add(LatLng(point.latitude, point.longitude));
       }
-      // Defining an ID
-      PolylineId id = PolylineId('poly');
-
-      // Initializing Polyline
-      Polyline polyline = Polyline(
-        polylineId: id,
-        color: Colors.red,
-        points: polylineCoordinates,
-        width: 3,
-      );
-
-      // Adding the polyline to the map
-      polylines[id] = polyline;
-      setState(() {});
     }
+
+    return polylineCoordinates;
   }
 
   @override
@@ -173,7 +162,16 @@ class _DriverFoundPageState extends State<DriverFoundPage> {
             final destination =
                 LatLng(_currentLocation!.latitude, _currentLocation!.longitude);
 
-            getPolyPoints(driverLocation, destination);
+            if (notificationController.hint.value == "trip_start") {
+              polylineCoordinates.clear();
+            }
+
+            getPolylinePoints(driverLocation, destination)
+                .then((List<LatLng> points) {
+              setState(() {
+                polylineCoordinates = points;
+              });
+            });
 
             markers.add(
               Marker(
@@ -204,7 +202,14 @@ class _DriverFoundPageState extends State<DriverFoundPage> {
                                   _currentLocation!.longitude),
                               zoom: 15,
                             ),
-                            polylines: Set<Polyline>.of(polylines.values),
+                            polylines: {
+                              Polyline(
+                                polylineId: const PolylineId("route"),
+                                points: polylineCoordinates,
+                                color: Colors.red,
+                                width: 6,
+                              ),
+                            },
                             markers: markers,
                           )
                         : const CircularProgressIndicator(),

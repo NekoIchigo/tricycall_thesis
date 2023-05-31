@@ -1,19 +1,20 @@
 import 'dart:async';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_polyline_points/flutter_polyline_points.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:tricycall_thesis/controller/auth_controller.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../../controller/driver_controller.dart';
 import '../../controller/notification_controller.dart';
 import '../chat_page.dart';
-import 'booking_found_page.dart';
 import 'driver_drawer.dart';
 
 class DriverHomePage extends StatefulWidget {
@@ -26,19 +27,22 @@ class DriverHomePage extends StatefulWidget {
 class _DriverHomePageState extends State<DriverHomePage> {
   final googleApiKey = "AIzaSyBFPJ9b4hwLh_CwUAPEe8aMIGT4deavGCk";
   GlobalKey<ScaffoldState> scaffoldState = GlobalKey<ScaffoldState>();
+  DriverController driverController = Get.find<DriverController>();
   NotificationController notificationController =
       Get.find<NotificationController>();
+  AuthController authController = Get.find<AuthController>();
 
   final Completer<GoogleMapController> _controller = Completer();
   List<LatLng> polylineCoordinates = [];
+  Map<PolylineId, Polyline> polylines = {};
   Position? _currentLocation;
   Set<Marker> markers = <Marker>{};
 
-  bool isOnline = false;
   var userUid = "";
   var lat = "14.5547", lng = "121.0244";
 
   String status = "";
+  bool isNear = false;
 
   Future<void> _getCurrentPosition() async {
     final hasPermission = await authController.handleLocationPermission();
@@ -76,14 +80,27 @@ class _DriverHomePageState extends State<DriverHomePage> {
   }
 
   BitmapDescriptor currentLocIcon = BitmapDescriptor.defaultMarker;
+  BitmapDescriptor destinationIcon = BitmapDescriptor.defaultMarker;
+  BitmapDescriptor sourceLocIcon = BitmapDescriptor.defaultMarker;
 
   void setCustomMarkerIcon() async {
     final Uint8List currentIcon = await authController.getBytesFromAsset(
         'assets/images/tricycle_icon.png', 50);
     currentLocIcon = BitmapDescriptor.fromBytes(currentIcon);
+    final Uint8List destination = await authController.getBytesFromAsset(
+        'assets/images/destination_icon.png', 50);
+    destinationIcon = BitmapDescriptor.fromBytes(destination);
+    final Uint8List driverIcon = await authController.getBytesFromAsset(
+        'assets/images/source_icon.png', 50);
+    sourceLocIcon = BitmapDescriptor.fromBytes(driverIcon);
   }
 
   initDriverStatus() async {
+    SharedPreferences localStorage = await SharedPreferences.getInstance();
+    bool? isInit = localStorage.getBool("isDriverInit");
+    if (isInit!) return; //if not firsttime opening the app
+
+    Timestamp currentTimestamp = Timestamp.now();
     String? token = notificationController.fcmToken;
     await FirebaseFirestore.instance
         .collection('driver_status')
@@ -93,11 +110,17 @@ class _DriverHomePageState extends State<DriverHomePage> {
       'longitude': _currentLocation!.longitude,
       'token': token,
       'status': 'offline', // offline, online, booked
+      'availability_timestamp': currentTimestamp,
     });
-    Get.snackbar("Init Driver Status", "Init Triggered id: $userUid");
+    Get.snackbar(
+      "Welcome Driver!",
+      "Go online to start getting bookings",
+      backgroundColor: Colors.green.shade300,
+    );
+    localStorage.setBool("isDriverInit", true);
   }
 
-  trackLoc() async {
+  sendLiveLocation() async {
     const LocationSettings locationSettings = LocationSettings(
       accuracy: LocationAccuracy.high,
       distanceFilter: 10,
@@ -124,17 +147,59 @@ class _DriverHomePageState extends State<DriverHomePage> {
         // 'status': status // offline, online, booked
       });
 
-      setState(() {});
+      setState(() {
+        if (driverController.isDriverBooked.value) {
+          if (driverController.isPickUp.value) {
+            navigateToDestination(
+              50,
+              driverController.bookingInfo.value.destinaiton!,
+              LatLng(_currentLocation!.latitude, _currentLocation!.longitude),
+            );
+          } else {
+            navigateToDestination(
+              100,
+              driverController.bookingInfo.value.sourceLoc!,
+              LatLng(_currentLocation!.latitude, _currentLocation!.longitude),
+            );
+          }
+        }
+      });
     });
   }
 
+  navigateToDestination(int range, LatLng destination, LatLng sourceLoc) {
+    polylineCoordinates.clear();
+
+    getPolyPoints(sourceLoc, destination);
+
+    markers.add(
+      Marker(
+        markerId: const MarkerId("destination_marker"),
+        icon: destinationIcon,
+        position: LatLng(destination.latitude, destination.longitude),
+      ),
+    );
+
+    if (sourceLoc != const LatLng(0.0, 0.0)) {
+      var distance = Geolocator.distanceBetween(sourceLoc.latitude,
+          sourceLoc.longitude, destination.latitude, destination.longitude);
+      print(distance);
+      if (distance < range) {
+        isNear = true;
+      } else {
+        isNear = false;
+      }
+    }
+  }
+
   updateStatus(String status) async {
+    Timestamp currentTimestamp = Timestamp.now();
     await FirebaseFirestore.instance
         .collection('driver_status')
         .doc(userUid)
         .update({
-      'status': status
-      // 'status': status // offline, online, booked
+      'status': status, // 'status': status // offline, online, booked
+      'availability_timestamp': currentTimestamp,
     });
   }
 
@@ -142,13 +207,47 @@ class _DriverHomePageState extends State<DriverHomePage> {
     userUid = await authController.getCurrentUserUid();
   }
 
+  void getPolyPoints(sourceLocation, destination) async {
+    if (!driverController.isDriverBooked.value) return;
+
+    PolylinePoints polylinePoints = PolylinePoints();
+    PolylineResult result = await polylinePoints.getRouteBetweenCoordinates(
+      googleApiKey,
+      PointLatLng(sourceLocation.latitude, sourceLocation.longitude),
+      PointLatLng(destination.latitude, destination.longitude),
+    );
+    // print("polylineres = $result");
+    if (result.points.isNotEmpty) {
+      for (var point in result.points) {
+        polylineCoordinates.add(
+          LatLng(point.latitude, point.longitude),
+        );
+      }
+      // Defining an ID
+      PolylineId id = const PolylineId('poly');
+
+      // Initializing Polyline
+      Polyline polyline = Polyline(
+        polylineId: id,
+        color: Colors.red,
+        points: polylineCoordinates,
+        width: 3,
+      );
+
+      // Adding the polyline to the map
+      polylines[id] = polyline;
+      setState(() {});
+    }
+  }
+
   @override
   void initState() {
     super.initState();
     getUid();
+    setCustomMarkerIcon();
     _getCurrentPosition();
     centerCamera();
-    trackLoc();
+    sendLiveLocation();
   }
 
   @override
@@ -175,14 +274,7 @@ class _DriverHomePageState extends State<DriverHomePage> {
                           _currentLocation!.longitude),
                       zoom: 15,
                     ),
-                    polylines: {
-                      Polyline(
-                        polylineId: const PolylineId("route"),
-                        points: polylineCoordinates,
-                        color: Colors.green,
-                        width: 6,
-                      ),
-                    },
+                    polylines: Set<Polyline>.of(polylines.values),
                     markers: markers,
                   )
                 : const Center(child: CircularProgressIndicator()),
@@ -223,9 +315,7 @@ class _DriverHomePageState extends State<DriverHomePage> {
                 child: IconButton(
                   icon: const Icon(Icons.my_location, color: Colors.white),
                   onPressed: () {
-                    //initDriverStatus();
-                    trackLoc();
-                    //centerCamera();
+                    centerCamera();
                   },
                 ),
               ),
@@ -233,43 +323,19 @@ class _DriverHomePageState extends State<DriverHomePage> {
             Positioned(
               bottom: 150,
               right: 20,
-              child: CircleAvatar(
-                radius: 20,
-                backgroundColor: Colors.green,
-                child: IconButton(
-                  icon: const Icon(Icons.check, color: Colors.white),
-                  onPressed: () {
-                    Get.snackbar("User id", userUid);
-                    // Get.to(() => const BookFoundPage());
-                    // Get.bottomSheet(
-                    //   isDismissible: false,
-                    //   enableDrag: false,
-                    //   Container(
-                    //     height: Get.height * .40,
-                    //     width: Get.width,
-                    //     color: Colors.white,
-                    //     child: Column(
-                    //       children: [],
-                    //     ),
-                    //   ),
-                    // );
-                  },
-                ),
-              ),
-            ),
-            Positioned(
-              bottom: 200,
-              right: 20,
-              child: CircleAvatar(
-                radius: 20,
-                backgroundColor: Colors.green,
-                child: IconButton(
-                  icon:
-                      const Icon(Icons.navigation_rounded, color: Colors.white),
-                  onPressed: () async {
-                    await launchUrl(Uri.parse(
-                        'google.navigation:q=$lat,$lng&key=$googleApiKey'));
-                  },
+              child: Visibility(
+                visible: driverController.isDriverBooked.value,
+                child: CircleAvatar(
+                  radius: 20,
+                  backgroundColor: Colors.green,
+                  child: IconButton(
+                    icon: const Icon(Icons.navigation_rounded,
+                        color: Colors.white),
+                    onPressed: () async {
+                      await launchUrl(Uri.parse(
+                          'google.navigation:q=$lat,$lng&key=$googleApiKey'));
+                    },
+                  ),
                 ),
               ),
             ),
@@ -277,21 +343,29 @@ class _DriverHomePageState extends State<DriverHomePage> {
               padding: const EdgeInsets.symmetric(vertical: 100.0),
               child: Align(
                 alignment: Alignment.bottomCenter,
-                child: CircleAvatar(
-                  radius: 30,
-                  backgroundColor: isOnline ? Colors.red : Colors.green,
-                  child: IconButton(
-                    icon: const Icon(
-                      Icons.power_settings_new_rounded,
-                      color: Colors.white,
-                      size: 30,
+                child: Visibility(
+                  visible: !driverController.isDriverBooked.value,
+                  child: CircleAvatar(
+                    radius: 30,
+                    backgroundColor: driverController.isDriverOnline.value
+                        ? Colors.red
+                        : Colors.green,
+                    child: IconButton(
+                      icon: const Icon(
+                        Icons.power_settings_new_rounded,
+                        color: Colors.white,
+                        size: 30,
+                      ),
+                      onPressed: () async {
+                        driverController.isDriverOnline.value =
+                            !driverController.isDriverOnline.value;
+                        status = driverController.isDriverOnline.value
+                            ? "online"
+                            : "offline";
+                        updateStatus(status);
+                        setState(() {});
+                      },
                     ),
-                    onPressed: () async {
-                      isOnline = !isOnline;
-                      status = isOnline ? "online" : "offline";
-                      updateStatus(status);
-                      setState(() {});
-                    },
                   ),
                 ),
               ),
@@ -300,9 +374,12 @@ class _DriverHomePageState extends State<DriverHomePage> {
               padding: const EdgeInsets.all(8.0),
               child: Align(
                 alignment: Alignment.bottomCenter,
-                child: SizedBox(
-                  width: Get.width * .70,
-                  child: openCollectCashDialog(),
+                child: Visibility(
+                  visible: isNear,
+                  child: SizedBox(
+                    width: Get.width * .70,
+                    child: openCollectCashDialog(),
+                  ),
                 ),
               ),
             ),
@@ -312,67 +389,94 @@ class _DriverHomePageState extends State<DriverHomePage> {
     );
   }
 
+  bool isArrive = false;
+
   ElevatedButton openCollectCashDialog() {
     return ElevatedButton(
       onPressed: () {
-        Get.defaultDialog(
-            confirm: Container(
-              width: Get.width * .75,
-              margin: const EdgeInsets.symmetric(horizontal: 20),
-              child: openPaymentDialog(),
-            ),
-            title: "ALREADY ARRIVED AT DROP OFF POINT",
-            titleStyle: GoogleFonts.varelaRound(
-                fontWeight: FontWeight.bold, color: Colors.green),
-            content: Column(
-              children: [
-                Image.asset(
-                  "assets/images/sided_tricycle.png",
-                  width: 100,
-                  fit: BoxFit.cover,
+        if (isArrive) {
+          if (driverController.isPickUp.value) {
+            Get.defaultDialog(
+                confirm: Container(
+                  width: Get.width * .75,
+                  margin: const EdgeInsets.symmetric(horizontal: 20),
+                  child: openPaymentDialog(),
                 ),
-                Container(
-                  height: 3,
-                  width: Get.width,
-                  color: Colors.green.shade900,
-                ),
-                const SizedBox(height: 15),
-                Text(
-                  "COLLECT CASH",
-                  style: GoogleFonts.varelaRound(
-                    fontWeight: FontWeight.bold,
-                    color: Colors.black,
-                  ),
-                ),
-                const SizedBox(height: 15),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
+                title: "ALREADY ARRIVED AT DROP OFF POINT",
+                titleStyle: GoogleFonts.varelaRound(
+                    fontWeight: FontWeight.bold, color: Colors.green),
+                content: Column(
                   children: [
                     Image.asset(
-                      "assets/images/peso_icon.png",
-                      width: 16,
+                      "assets/images/sided_tricycle.png",
+                      width: 100,
                       fit: BoxFit.cover,
-                      color: Colors.green,
                     ),
+                    Container(
+                      height: 3,
+                      width: Get.width,
+                      color: Colors.green.shade900,
+                    ),
+                    const SizedBox(height: 15),
                     Text(
-                      "69.69",
+                      "COLLECT CASH",
                       style: GoogleFonts.varelaRound(
-                        fontSize: 16,
                         fontWeight: FontWeight.bold,
-                        color: Colors.green,
+                        color: Colors.black,
                       ),
                     ),
+                    const SizedBox(height: 15),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Image.asset(
+                          "assets/images/peso_icon.png",
+                          width: 16,
+                          fit: BoxFit.cover,
+                          color: Colors.green,
+                        ),
+                        Text(
+                          "69.69",
+                          style: GoogleFonts.varelaRound(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.green,
+                          ),
+                        ),
+                      ],
+                    ),
                   ],
-                ),
-              ],
-            ));
+                ));
+          } else {
+            driverController.isPickUp.value = true;
+            notificationController.sendNotification(
+              driverController.bookingInfo.value.driverId,
+              driverController.bookingInfo.value.passengerToken,
+              "Your trip starts",
+              "Stay safe in your travel!",
+              "trip_start",
+            );
+          }
+        } else {
+          isArrive = true;
+          Get.snackbar("Pick up your passenger",
+              "Please communicate with the passenger");
+          notificationController.sendNotification(
+            driverController.bookingInfo.value.driverId,
+            driverController.bookingInfo.value.passengerToken,
+            "Driver arrive at your Pick up location",
+            "Please communicate with the driver to proceed",
+            "driver_arrive",
+          );
+        }
+        setState(() {});
       },
       style: ElevatedButton.styleFrom(
           shape:
               RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
           side: BorderSide(color: Colors.green.shade900, width: 2)),
       child: Text(
-        "ARRIVE AT PICK UP POINT",
+        isArrive ? "PICK UP PASSENGER" : "ARRIVE AT LOCATION",
         style: GoogleFonts.varelaRound(
           fontWeight: FontWeight.bold,
         ),
@@ -405,7 +509,7 @@ class _DriverHomePageState extends State<DriverHomePage> {
                     color: Colors.green,
                   ),
                   Text(
-                    "69.69",
+                    "${driverController.bookingInfo.value.price}",
                     style: GoogleFonts.varelaRound(
                       fontSize: 16,
                       fontWeight: FontWeight.bold,

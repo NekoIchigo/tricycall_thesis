@@ -99,7 +99,7 @@ class PassengerController extends GetxController {
     String sourceLocation = localStorage.getString("source")!;
     String destination = localStorage.getString("destination")!;
     String totalDistance = localStorage.getString("total_distance")!;
-    double travelPrice = localStorage.getDouble("travel_price")!;
+    int travelPrice = localStorage.getInt("travel_price")!;
 
     LatLng sourceLatLng =
         await authController.buildLatLngFromAddress(sourceLocation);

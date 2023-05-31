@@ -8,63 +8,71 @@ exports.checkHelth = functions.https.onCall(async (data, context) => {
   return "The function is online";
 });
 
-export const bookRide = functions.firestore.document("bookings/{bookingId}")
+export const bookRide = functions.firestore
+  .document("bookings/{bookingId}")
   .onCreate(async (snapshot, context) => {
-    const bookingData = snapshot.data();
     const bookingId = context.params.bookingId;
-    const pickupLocation = bookingData.pick_up_location;
 
-    // Get all online drivers
-    const onlineDriversSnapshot = await admin.firestore()
-      .collection("driver_status").where("status", "==", "online").get();
-
-    // Calculate the distance between pickup location and each online driver
-    let nearestDriverId: string | null = null;
-    let nearestDriverDistance: number | null = null;
-
-    onlineDriversSnapshot.forEach((driverSnapshot) => {
-      const driverData = driverSnapshot.data();
-      const driverLocation = {
-        latitude: driverData.latitude,
-        longitude: driverData.longitude,
-      };
-      const distance = geolib.getDistance(pickupLocation, driverLocation);
-
-      if (nearestDriverDistance === null || distance < nearestDriverDistance) {
-        nearestDriverId = driverSnapshot.id;
-        nearestDriverDistance = distance;
-      }
-    });
-
-    // Assign the nearest driver to the booking
-    if (nearestDriverId) {
-      await snapshot.ref.update({driver_id: nearestDriverId});
-      // Update the driver's status to "booked"
-      await admin.firestore()
+    // Function to process the booking when a driver becomes available
+    const processBooking = async () => {
+      // Get all online drivers ordered by their availability timestamp
+      const onlineDriversSnapshot = await admin
+        .firestore()
         .collection("driver_status")
-        .doc(nearestDriverId)
-        .update({status: "booked"});
-    }
+        .where("status", "==", "online")
+        .orderBy("availability_timestamp")
+        .get();
+      console.log("Success getting drivers list");
+      // Assign the booking to the next available driver in the queue
+      let assignedDriverId: string | null = null;
+      onlineDriversSnapshot.forEach((driverSnapshot) => {
+        if (!assignedDriverId) {
+          assignedDriverId = driverSnapshot.id;
+          console.log("Driver data" + driverSnapshot.id);
+          // Update the driver's status to "booked"
+          driverSnapshot.ref.update({status: "booked"});
+        }
+      });
 
-    // Send notification to the nearest driver
-    // (assuming you have a function to retrieve the driver's device token)
-    if (nearestDriverId) {
-      const driverToken = await getDriverToken(nearestDriverId);
-      const notificationPayload = {
-        token: driverToken,
-        notification: {
-          title: "New Booking",
-          body: "You have a new booking request",
-        },
-        data: {
-          // Include the booking data as a JSON string
-          bookingData: bookingId,
-          user: "driver",
-        },
-      };
+      if (assignedDriverId) {
+        // Update the booking with the assigned driver
+        await snapshot.ref.update({driver_id: assignedDriverId});
 
-      await sendNotificationToDevice(notificationPayload);
-    }
+        // Send notification to the assigned driver
+        const driverToken = await getDriverToken(assignedDriverId);
+        const notificationPayload = {
+          token: driverToken,
+          notification: {
+            title: "New Booking",
+            body: "You have a new booking request",
+          },
+          data: {
+            bookingData: bookingId,
+            user: "driver",
+          },
+        };
+
+        await sendNotificationToDevice(notificationPayload);
+      } else {
+        // No available drivers found, listen for driver status changes
+        const unsubscribe = admin
+          .firestore()
+          .collection("driver_status")
+          .where("status", "==", "online")
+          .orderBy("availability_timestamp")
+          .limit(1)
+          .onSnapshot(async (snapshot) => {
+            if (!snapshot.empty) {
+              unsubscribe(); // Stop listening to further changes
+              await processBooking(); // Process the booking again
+            }
+          });
+      }
+    };
+
+    await processBooking(); // Start processing the booking
+
+    // Other code (if any) related to the onCreate function
   });
 
 /**
@@ -105,15 +113,17 @@ async function sendNotificationToDevice(
   }
 }
 
-export const driverResponse = functions.https.onRequest(async (req, res) => {
-  const {driverId, bookingId, response} = req.body;
-
+exports.driverResponse = functions.https.onCall(async (data, context) => {
+  const {driverId, bookingId, response} = data;
+  console
+    .log("Request :" + ", " + driverId + ", " + bookingId + ", " + response);
   try {
     const bookingDataSnapshot = await admin.firestore()
       .collection("bookings")
       .doc(bookingId)
       .get();
-
+    console
+      .log("Booking User ID :" + ", " + bookingDataSnapshot.data()?.user_id);
     if (response === "declined") {
       const pickupLocation = bookingDataSnapshot.data()?.pick_up_location;
 
@@ -122,7 +132,7 @@ export const driverResponse = functions.https.onRequest(async (req, res) => {
         .firestore()
         .collection("driver_status")
         .where("status", "==", "online")
-        .where("driverId", "!=", driverId)
+        .where(admin.firestore.FieldPath.documentId(), "!=", driverId)
         .get();
 
       // Calculate the distance between pickup location and each online driver
@@ -145,7 +155,7 @@ export const driverResponse = functions.https.onRequest(async (req, res) => {
         }
       });
 
-
+      console.log("Driver ID:" + nearestDriverId);
       if (nearestDriverId) {
         // Send booking offer to the new driver
         const driverToken = await getDriverToken(nearestDriverId);
@@ -169,12 +179,13 @@ export const driverResponse = functions.https.onRequest(async (req, res) => {
         .doc(driverId)
         .update({status: "online"});
 
-      res.status(200).send("OK");
+      return "success";
     } else {
-      res.status(200).send("OK");
+      return "success";
     }
   } catch (error) {
     console.error("Error:", error);
-    res.status(500).send("Error occurred");
+    throw new functions.https.
+      HttpsError("internal", "Error sending driver response");
   }
 });

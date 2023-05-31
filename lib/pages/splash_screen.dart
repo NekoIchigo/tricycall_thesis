@@ -26,6 +26,7 @@ class _SplashScreenState extends State<SplashScreen> {
     localStorage.setString("destination", "");
     localStorage.setString("total_distance", "");
     localStorage.setDouble("travel_price", 0.0);
+    localStorage.setBool("isDriverInit", false);
   }
 
   startTimer() {

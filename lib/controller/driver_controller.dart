@@ -5,17 +5,24 @@ import 'package:cloud_functions/cloud_functions.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:get/get.dart';
-import 'dart:convert';
-import 'package:http/http.dart' as http;
+import 'package:google_maps_flutter/google_maps_flutter.dart';
 
 // ignore: depend_on_referenced_packages, library_prefixes
 import 'package:path/path.dart' as Path;
+import '../models/booking_model.dart';
 import '../models/user_model.dart';
 import '../pages/home_page.dart';
 
 class DriverController extends GetxController {
   var isProfileUploading = false.obs;
+  var isDriverOnline = false.obs;
+  var isDriverBooked = false.obs;
+  var isPickUp = false.obs;
+  var bookingId = "".obs;
+  var bookingInfo = BookingModel().obs;
+
   // User token
 
   uploadImage(File image) async {
@@ -107,39 +114,35 @@ class DriverController extends GetxController {
     });
   }
 
-  Future<void> testHealth() async {
-    HttpsCallable callable =
-        FirebaseFunctions.instance.httpsCallable('checkHelth');
+  // Future<void> testHealth() async {
+  //   HttpsCallable callable =
+  //       FirebaseFunctions.instance.httpsCallable('checkHelth');
 
-    final response = await callable.call();
-    if (response.data != null) {
-      print(response.data);
-    }
-  }
+  //   final response = await callable.call();
+  //   if (response.data != null) {
+  //     print(response.data);
+  //   }
+  // }
 
 // Make an HTTP POST request to the Cloud Function endpoint
   Future<void> sendDriverResponse(
       String driverId, String bookingId, String response) async {
-    const url =
-        'https://us-central1-tricycallthesis.cloudfunctions.net/driverResponse';
-    final headers = {'Content-Type': 'application/json'};
-    final body = jsonEncode({
-      'driverId': driverId,
-      'bookingId': bookingId,
-      'response': response,
-    });
+    final callable = FirebaseFunctions.instance.httpsCallable('driverResponse');
+    debugPrint(
+        "driverId: $driverId, bookingId: $bookingId, response: $response");
 
     try {
-      final response =
-          await http.post(Uri.parse(url), headers: headers, body: body);
+      final result = await callable.call({
+        'driverId': driverId,
+        'bookingId': bookingId,
+        'response': response,
+      });
 
-      if (response.statusCode == 200) {
-        print('Driver response sent successfully');
-      } else {
-        print('Failed to send driver response. Error: ${response.body}');
-      }
+      // Handle the result if needed
+      final data = result.data;
+      debugPrint('Driver response sent successfully, $data');
     } catch (error) {
-      print('Error sending driver response: $error');
+      debugPrint('Error sending driver response: $error');
     }
   }
 }

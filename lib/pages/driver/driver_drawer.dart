@@ -6,6 +6,7 @@ import 'package:tricycall_thesis/pages/ride_history_page.dart';
 
 import '../../controller/auth_controller.dart';
 import '../../controller/passenger_controller.dart';
+import '../account_setting_page.dart';
 
 AuthController authController = Get.find<AuthController>();
 PassengerController pasengerController = Get.find<PassengerController>();
@@ -187,7 +188,7 @@ Widget driverDrawerHeader() {
         children: [
           InkWell(
             onTap: () {
-              // Get.to(() => const AccountSettingPage());
+              Get.to(() => const AccountSettingPage());
             },
             child: CircleAvatar(
               backgroundColor: Colors.white,

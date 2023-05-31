@@ -53,6 +53,7 @@ class _HomePageState extends State<HomePage> {
 
   double? travelPrice, minute, seconds;
   String? time;
+  double totalDistance = 0.0;
   String _placeDistance = ""; // Stores total distance of polyline
 
   Position? _currentLocation;
@@ -60,10 +61,10 @@ class _HomePageState extends State<HomePage> {
 
   BitmapDescriptor sourceIcon = BitmapDescriptor.defaultMarker,
       destinationIcon = BitmapDescriptor.defaultMarker,
-      currentLocIcon = BitmapDescriptor.defaultMarker;
+      driversIcon = BitmapDescriptor.defaultMarker;
 
   bool isBookClicked = false;
-
+  TextEditingController noteToDriver = TextEditingController();
   var userUid = "";
 
   Future<void> _getCurrentPosition() async {
@@ -82,19 +83,6 @@ class _HomePageState extends State<HomePage> {
     });
   }
 
-  Future<void> trackLoc() async {
-    const LocationSettings locationSettings = LocationSettings(
-      accuracy: LocationAccuracy.high,
-      distanceFilter: 10,
-    );
-
-    Geolocator.getPositionStream(locationSettings: locationSettings)
-        .listen((Position? position) {
-      _currentLocation = position;
-      setState(() {});
-    });
-  }
-
   void setCustomMarkerIcon() async {
     final Uint8List source = await authController.getBytesFromAsset(
         'assets/images/source_icon.png', 50);
@@ -102,9 +90,9 @@ class _HomePageState extends State<HomePage> {
     final Uint8List destination = await authController.getBytesFromAsset(
         'assets/images/destination_icon.png', 50);
     destinationIcon = BitmapDescriptor.fromBytes(destination);
-    final Uint8List currentIcon = await authController.getBytesFromAsset(
+    final Uint8List driverIcon = await authController.getBytesFromAsset(
         'assets/images/tricycle_icon.png', 80);
-    currentLocIcon = BitmapDescriptor.fromBytes(currentIcon);
+    driversIcon = BitmapDescriptor.fromBytes(driverIcon);
   }
 
   getPaymentMethod() async {
@@ -114,23 +102,21 @@ class _HomePageState extends State<HomePage> {
     });
   }
 
-  TextEditingController noteToDriver = TextEditingController();
   setNoteToDriver() async {
     SharedPreferences localStorage = await SharedPreferences.getInstance();
     localStorage.setString("note_to_driver", noteToDriver.text);
   }
 
-  // TODO : Assign an empty value to locastorage source and destination after transaction
   getSourceLatLong() async {
     SharedPreferences localStorage = await SharedPreferences.getInstance();
     late LatLng sourceLocation;
 
     var place = localStorage.getString("source") ?? "";
     sourceText = place;
-    print("SourceText = $sourceText");
+    // print("SourceText = $sourceText");
 
     sourceLocation = await authController.buildLatLngFromAddress(place);
-    print("sourcelatlng =$sourceLocation");
+    // print("sourcelatlng =$sourceLocation");
 
     return sourceLocation;
   }
@@ -141,10 +127,10 @@ class _HomePageState extends State<HomePage> {
 
     var place = localStorage.getString("destination") ?? "";
     destinationText = place;
-    print("DestinationText = $destinationText");
+    // print("DestinationText = $destinationText");
 
     destination = await authController.buildLatLngFromAddress(place);
-    print("DesLatLng = $destination");
+    // print("DesLatLng = $destination");
     return destination;
   }
 
@@ -164,7 +150,7 @@ class _HomePageState extends State<HomePage> {
         polylineCoordinates.add(LatLng(point.latitude, point.longitude));
       }
       // Defining an ID
-      PolylineId id = PolylineId('poly');
+      PolylineId id = const PolylineId('poly');
 
       // Initializing Polyline
       Polyline polyline = Polyline(
@@ -177,7 +163,6 @@ class _HomePageState extends State<HomePage> {
       // Adding the polyline to the map
       polylines[id] = polyline;
     }
-    double totalDistance = 0.0;
 
     for (int i = 0; i < polylineCoordinates.length - 1; i++) {
       totalDistance += authController.coordinateDistance(
@@ -192,14 +177,23 @@ class _HomePageState extends State<HomePage> {
     setState(() {
       _placeDistance = totalDistance.toStringAsFixed(2);
       localStorage.setString("total_distance", _placeDistance);
-      travelPrice = TariffCalculator.calculateTariff(
-          totalDistance.toInt(), 3, true, true);
-      debugPrint('DISTANCE: $_placeDistance km');
-      minute = ((totalDistance / 20) * 60);
-      seconds = minute! - minute!.toInt();
-      seconds = seconds! * 60;
-      time = "${minute!.toInt()}: ${seconds!.toInt()}";
+      setPrice();
+      setTime();
     });
+  }
+
+  setPrice() async {
+    SharedPreferences localStorage = await SharedPreferences.getInstance();
+    travelPrice =
+        TariffCalculator.calculateTariff(totalDistance.toInt(), 3, true, true);
+    localStorage.setInt("travel_price", travelPrice!.toInt());
+  }
+
+  setTime() {
+    minute = ((totalDistance / 20) * 60);
+    seconds = minute! - minute!.toInt();
+    seconds = seconds! * 60;
+    time = "${minute!.toInt()}: ${seconds!.toInt()}";
   }
 
   setPolyPoint() async {
@@ -244,7 +238,7 @@ class _HomePageState extends State<HomePage> {
         Marker marker = Marker(
           markerId: MarkerId(documentSnapshot.id),
           position: LatLng(latitude, longitude),
-          // Add any other customization for the marker, e.g., icon, info window, etc.
+          icon: driversIcon,
         );
 
         markers.add(marker);
@@ -256,12 +250,12 @@ class _HomePageState extends State<HomePage> {
   initState() {
     super.initState();
     _getCurrentPosition();
-    trackLoc();
     setCustomMarkerIcon();
     getPaymentMethod();
     getCurrentUserUid();
     setPolyPoint();
     displayOnlineDriversOnMap();
+    passengerController.getUserInfo();
   }
 
   @override
@@ -315,7 +309,9 @@ class _HomePageState extends State<HomePage> {
               const SizedBox(width: 5),
               InkWell(
                 onTap: () {
-                  Get.to(() => const SelectLocations())!
+                  Get.to(() => SelectLocations(
+                            currentLocation: _currentLocation,
+                          ))!
                       .then((value) => setState(() {}));
                 },
                 child: fieldSourceDestination(),
@@ -454,9 +450,10 @@ class _HomePageState extends State<HomePage> {
             color: Colors.green,
             fontWeight: FontWeight.bold,
           ),
+          barrierDismissible: false,
           titlePadding: const EdgeInsets.symmetric(vertical: 20),
           contentPadding: const EdgeInsets.symmetric(horizontal: 20),
-          content: const RadioButtonSection(),
+          content: const PaymentMethod(),
           cancel: Padding(
             padding: const EdgeInsets.only(bottom: 10.0),
             child: ElevatedButton(
@@ -479,7 +476,7 @@ class _HomePageState extends State<HomePage> {
         );
       },
       child: Container(
-        height: 50,
+        height: Get.height * 0.06,
         width: Get.width * .45,
         padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 8),
         decoration: BoxDecoration(
@@ -515,6 +512,7 @@ class _HomePageState extends State<HomePage> {
             color: Colors.green,
             fontWeight: FontWeight.bold,
           ),
+          barrierDismissible: false,
           titlePadding: const EdgeInsets.symmetric(vertical: 20),
           contentPadding: const EdgeInsets.symmetric(horizontal: 20),
           content: TextFormField(
@@ -550,7 +548,7 @@ class _HomePageState extends State<HomePage> {
         );
       },
       child: Container(
-        height: 50,
+        height: Get.height * 0.06,
         width: Get.width * .45,
         padding: const EdgeInsets.all(8),
         decoration: BoxDecoration(
@@ -697,6 +695,61 @@ class _HomePageState extends State<HomePage> {
                       ),
               ),
             ),
+            Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: InkWell(
+                onTap: () {
+                  Get.defaultDialog(
+                    title: "Number of Passengers:",
+                    titleStyle: GoogleFonts.varelaRound(
+                      fontSize: 14,
+                      color: Colors.green,
+                      fontWeight: FontWeight.bold,
+                    ),
+                    barrierDismissible: false,
+                    titlePadding: const EdgeInsets.symmetric(vertical: 20),
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 20),
+                    content: const TotalPassengers(),
+                    cancel: Padding(
+                      padding: const EdgeInsets.only(bottom: 10.0),
+                      child: ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.red),
+                        onPressed: () {
+                          Get.back();
+                        },
+                        child: const Text("Cancel"),
+                      ),
+                    ),
+                    confirm: Padding(
+                      padding: const EdgeInsets.only(bottom: 10.0),
+                      child: ElevatedButton(
+                        onPressed: () {
+                          Get.back();
+                        },
+                        child: const Text("Confirm"),
+                      ),
+                    ),
+                  );
+                },
+                child: Column(
+                  children: [
+                    Icon(
+                      Icons.people_outline,
+                      size: Get.width * .13,
+                      color: Colors.green,
+                    ),
+                    Text(
+                      "# Passengers",
+                      style: GoogleFonts.varelaRound(
+                        fontSize: 9,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
             SizedBox(width: Get.width * .05),
           ],
         )
@@ -745,16 +798,16 @@ class _HomePageState extends State<HomePage> {
   }
 }
 
-class RadioButtonSection extends StatefulWidget {
-  const RadioButtonSection({
+class PaymentMethod extends StatefulWidget {
+  const PaymentMethod({
     Key? key,
   }) : super(key: key);
 
   @override
-  State<RadioButtonSection> createState() => _RadioButtonSectionState();
+  State<PaymentMethod> createState() => _PaymentMethodState();
 }
 
-class _RadioButtonSectionState extends State<RadioButtonSection> {
+class _PaymentMethodState extends State<PaymentMethod> {
   late SharedPreferences localStorage;
   String? singleValue = "CASH";
 
@@ -801,6 +854,92 @@ class _RadioButtonSectionState extends State<RadioButtonSection> {
               singleValue = value;
               // print(singleValue);
               setPayment();
+            },
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class TotalPassengers extends StatefulWidget {
+  const TotalPassengers({super.key});
+
+  @override
+  State<TotalPassengers> createState() => _TotalPassengersState();
+}
+
+class _TotalPassengersState extends State<TotalPassengers> {
+  late SharedPreferences localStorage;
+  int? singleValue = 1;
+
+  getTotalPassenger() async {
+    localStorage = await SharedPreferences.getInstance();
+
+    singleValue = localStorage.getInt("total_passengers") ?? 1;
+  }
+
+  setTotalPassenger() async {
+    localStorage = await SharedPreferences.getInstance();
+    localStorage.setInt("total_passengers", singleValue!);
+    // print("Store $singleValue");
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    getTotalPassenger();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        RadioButton(
+          description: "1 Passenger",
+          value: 1,
+          groupValue: singleValue,
+          onChanged: (value) => setState(
+            () {
+              singleValue = value;
+              // print(singleValue);
+              setTotalPassenger();
+            },
+          ),
+        ),
+        RadioButton(
+          description: "2 Passengers",
+          value: 2,
+          groupValue: singleValue,
+          onChanged: (value) => setState(
+            () {
+              singleValue = value;
+              // print(singleValue);
+              setTotalPassenger();
+            },
+          ),
+        ),
+        RadioButton(
+          description: "3 Passengers",
+          value: 3,
+          groupValue: singleValue,
+          onChanged: (value) => setState(
+            () {
+              singleValue = value;
+              // print(singleValue);
+              setTotalPassenger();
+            },
+          ),
+        ),
+        RadioButton(
+          description: "4 Passengers",
+          value: 4,
+          groupValue: singleValue,
+          onChanged: (value) => setState(
+            () {
+              singleValue = value;
+              // print(singleValue);
+              setTotalPassenger();
             },
           ),
         ),

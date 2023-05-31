@@ -5,6 +5,7 @@ import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:tricycall_thesis/widgets/input_text.dart';
+import 'package:regexed_validator/regexed_validator.dart';
 
 import '../controller/passenger_controller.dart';
 import '../widgets/green_button.dart';
@@ -30,6 +31,7 @@ class _AccountSettingPageState extends State<AccountSettingPage> {
 
   final ImagePicker _picker = ImagePicker();
   File? selectedImage;
+  bool isEdit = false;
 
   getImage(ImageSource source) async {
     final XFile? image = await _picker.pickImage(source: source);
@@ -54,6 +56,37 @@ class _AccountSettingPageState extends State<AccountSettingPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      appBar: AppBar(
+        leading: IconButton(
+          onPressed: () {
+            Get.back();
+          },
+          icon: const Icon(Icons.arrow_back),
+        ),
+        title: Center(
+          child: Text(
+            "USER PROFILE",
+            style: GoogleFonts.varelaRound(
+                fontSize: 16, fontWeight: FontWeight.bold),
+          ),
+        ),
+        actions: [
+          Padding(
+            padding: const EdgeInsets.only(right: 20),
+            child: IconButton(
+              onPressed: () {
+                isEdit = !isEdit;
+                setState(() {});
+              },
+              icon: Icon(
+                isEdit ? Icons.edit_off : Icons.edit,
+                size: 30,
+              ),
+            ),
+          ),
+        ],
+        backgroundColor: Colors.green,
+      ),
       body: SizedBox(
         height: Get.height,
         width: Get.width,
@@ -62,41 +95,26 @@ class _AccountSettingPageState extends State<AccountSettingPage> {
           child: Stack(
             alignment: Alignment.center,
             children: [
-              const SizedBox(
-                height: 20,
-              ),
               Positioned(
-                bottom: 0,
+                top: 0,
+                width: Get.width,
                 child: Container(
-                  width: Get.width,
-                  height: Get.height * .70,
-                  padding: const EdgeInsets.all(10),
-                  decoration: const BoxDecoration(
-                    color: Color(0xFF00bf63),
-                    borderRadius: BorderRadius.vertical(
-                      top: Radius.circular(150),
-                    ),
-                  ),
-                  child: Column(
-                    children: [
-                      SizedBox(
-                        height: Get.height * .18,
-                      ),
-                      SingleChildScrollView(
-                        child: inputSections(),
-                      ),
-                    ],
-                  ),
+                  height: Get.height * .15,
+                  color: Colors.green,
                 ),
               ),
               Positioned(
-                bottom: Get.height * .55,
+                bottom: Get.height * .05,
+                child: inputSections(),
+              ),
+              Positioned(
+                bottom: Get.height * .68,
                 child: getProfilePic(),
               ),
               Positioned(
-                bottom: Get.height * .83,
-                width: Get.width * .50,
-                child: Image.asset("assets/images/title.png"),
+                top: Get.height * .80,
+                width: Get.width * .85,
+                child: bottomButton(),
               ),
             ],
           ),
@@ -109,101 +127,96 @@ class _AccountSettingPageState extends State<AccountSettingPage> {
     return Column(
       children: [
         SizedBox(
-          height: Get.height * .40,
+          height: Get.height * .55,
           child: SingleChildScrollView(
             scrollDirection: Axis.vertical,
             child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                InputText(
-                  textController: firstNameController,
-                  label: "First Name",
-                  icon: Icons.abc_rounded,
-                  isPassword: false,
-                  keyboardtype: TextInputType.text,
-                  validator: (String? input) {
+                Row(
+                  children: [
+                    underLinedInput(
+                      firstNameController,
+                      "Name",
+                      "First name",
+                      Get.width * .4,
+                      (String? input) {
+                        if (input!.isEmpty) {
+                          return "A Field is Empty!";
+                        }
+                        if (input.length < 2) {
+                          return "This Field must be more than 2 characters";
+                        }
+                      },
+                    ),
+                    underLinedInput(
+                      lastNameController,
+                      "",
+                      "Last name",
+                      Get.width * .4,
+                      (String? input) {
+                        if (input!.isEmpty) {
+                          return "A Field is Empty!";
+                        }
+                        if (input.length < 2) {
+                          return "This Field must be more than 2 characters";
+                        }
+                      },
+                    ),
+                  ],
+                ),
+                const SizedBox(
+                  height: 10,
+                ),
+                underLinedInput(
+                  emailController,
+                  "Email",
+                  "example@email.com",
+                  Get.width * .8,
+                  (String? input) {
                     if (input!.isEmpty) {
                       return "A Field is Empty!";
                     }
-                    if (input.length < 2) {
-                      return "This Field must be more than 2 characters";
+                    if (validator.email(input)) {
+                      return "Invalid Email";
                     }
                   },
                 ),
                 const SizedBox(
                   height: 10,
                 ),
-                InputText(
-                  textController: lastNameController,
-                  label: "Last Name",
-                  icon: Icons.abc_rounded,
-                  isPassword: false,
-                  keyboardtype: TextInputType.text,
-                  validator: (String? input) {
-                    if (input!.isEmpty) {
-                      return "A Field is Empty!";
-                    }
-                    if (input.length < 2) {
-                      return "This Field must be more than 2 characters";
+                underLinedInput(
+                  emergencyEmailController,
+                  "Emergency Email",
+                  "example@email.com",
+                  Get.width * .8,
+                  (String? input) {
+                    if (input!.isNotEmpty) {
+                      if (validator.email(input)) {
+                        return "Invalid Email";
+                      }
                     }
                   },
                 ),
                 const SizedBox(
                   height: 10,
                 ),
-                InputText(
-                  textController: emailController,
-                  label: "Email",
-                  icon: Icons.email_rounded,
-                  isPassword: false,
-                  keyboardtype: TextInputType.text,
-                  validator: (String? input) {
-                    if (input!.isEmpty) {
-                      return "A Field is Empty!";
-                    }
-                    if (input.length < 5) {
-                      return "This Field must be more than 5 characters";
-                    }
-                  },
+                underLinedInput(
+                  homeController,
+                  "Home Address(Optional)",
+                  "Tap here to select address",
+                  Get.width * .8,
+                  (String? input) {},
                 ),
                 const SizedBox(
                   height: 10,
                 ),
-                InputText(
-                  textController: emergencyEmailController,
-                  label: "Emergency Email",
-                  icon: Icons.abc_rounded,
-                  isPassword: false,
-                  keyboardtype: TextInputType.text,
-                  validator: (String? input) {
-                    // if (input!.isEmpty) {
-                    //   return "A Field is Empty!";
-                    // }
-                    // if (input.length < 2) {
-                    //   return "First Name is must be more than 2 characters";
-                    // }
-                  },
-                ),
-                const SizedBox(
-                  height: 10,
-                ),
-                InputText(
-                  textController: homeController,
-                  label: "Home Address(Optional)",
-                  icon: Icons.home_rounded,
-                  isPassword: false,
-                  keyboardtype: TextInputType.text,
-                  validator: (String? input) {},
-                ),
-                const SizedBox(
-                  height: 10,
-                ),
-                InputText(
-                  textController: workController,
-                  label: "Work Address(Optional)",
-                  icon: Icons.work,
-                  isPassword: false,
-                  keyboardtype: TextInputType.text,
-                  validator: (String? input) {},
+                underLinedInput(
+                  workController,
+                  "Work Address(Optional)",
+                  "Tap here to select address",
+                  Get.width * .8,
+                  (String? input) {},
                 ),
                 const SizedBox(
                   height: 20,
@@ -248,6 +261,39 @@ class _AccountSettingPageState extends State<AccountSettingPage> {
                 ),
         ),
       ],
+    );
+  }
+
+  SizedBox underLinedInput(
+    TextEditingController controller,
+    String title,
+    String hint,
+    double? width,
+    Function validator,
+  ) {
+    return SizedBox(
+      width: width,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            title,
+            style: GoogleFonts.varelaRound(
+                fontSize: 16, fontWeight: FontWeight.bold),
+          ),
+          TextFormField(
+            controller: controller,
+            decoration: InputDecoration(
+              hintText: hint,
+              hintStyle: GoogleFonts.varelaRound(
+                fontSize: 14,
+              ),
+              border: const UnderlineInputBorder(),
+            ),
+            validator: (String? input) => validator(input),
+          ),
+        ],
+      ),
     );
   }
 
@@ -309,59 +355,81 @@ class _AccountSettingPageState extends State<AccountSettingPage> {
               ),
             );
           },
-          child: selectedImage == null
-              ? pasengerController.myUser.value.image != null
-                  ? Container(
-                      height: 120,
-                      width: 120,
-                      decoration: BoxDecoration(
-                        image: DecorationImage(
-                          image: NetworkImage(
-                              pasengerController.myUser.value.image!),
-                          fit: BoxFit.cover,
+          child: Container(
+            margin: const EdgeInsets.all(3),
+            padding: const EdgeInsets.all(3),
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: Colors.white,
+              border: Border.all(
+                width: 2,
+                color: Colors.green.shade900,
+              ),
+            ),
+            child: selectedImage == null
+                ? pasengerController.myUser.value.image != null
+                    ? Container(
+                        height: 120,
+                        width: 120,
+                        decoration: BoxDecoration(
+                          image: DecorationImage(
+                            image: NetworkImage(
+                                pasengerController.myUser.value.image!),
+                            fit: BoxFit.cover,
+                          ),
+                          shape: BoxShape.circle,
+                          color: Colors.grey.shade400,
                         ),
-                        shape: BoxShape.circle,
-                        color: Colors.grey.shade400,
-                      ),
-                    )
-                  : Container(
-                      height: 120,
-                      width: 120,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: Colors.grey.shade400,
-                      ),
-                      child: const Center(
-                        child: Icon(
-                          Icons.camera_alt_outlined,
-                          color: Colors.white,
-                          size: 40,
+                      )
+                    : Container(
+                        height: 120,
+                        width: 120,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: Colors.grey.shade400,
                         ),
+                        child: const Center(
+                          child: Icon(
+                            Icons.camera_alt_outlined,
+                            color: Colors.white,
+                            size: 40,
+                          ),
+                        ),
+                      )
+                : Container(
+                    height: 120,
+                    width: 120,
+                    decoration: BoxDecoration(
+                      image: DecorationImage(
+                        image: FileImage(selectedImage!),
+                        fit: BoxFit.cover,
                       ),
-                    )
-              : Container(
-                  height: 120,
-                  width: 120,
-                  decoration: BoxDecoration(
-                    image: DecorationImage(
-                      image: FileImage(selectedImage!),
-                      fit: BoxFit.cover,
+                      shape: BoxShape.circle,
+                      color: Colors.grey.shade400,
                     ),
-                    shape: BoxShape.circle,
-                    color: Colors.grey.shade400,
                   ),
-                ),
-        ),
-        const SizedBox(height: 20),
-        Text(
-          "Profile",
-          style: GoogleFonts.varelaRound(
-            color: Colors.white,
-            fontWeight: FontWeight.bold,
-            fontSize: 26,
           ),
-        )
+        ),
       ],
+    );
+  }
+
+  Widget bottomButton() {
+    return ElevatedButton(
+      onPressed: () {},
+      style: ElevatedButton.styleFrom(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+        ),
+        padding: const EdgeInsets.symmetric(vertical: 10),
+      ),
+      child: Text(
+        isEdit ? "SAVE" : "LOG OUT",
+        style: GoogleFonts.varelaRound(
+          fontSize: 16,
+          fontWeight: FontWeight.bold,
+        ),
+      ),
     );
   }
 }

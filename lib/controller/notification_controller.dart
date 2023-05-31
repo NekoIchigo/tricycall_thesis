@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:http/http.dart' as http;
 import 'package:firebase_messaging/firebase_messaging.dart';
@@ -14,6 +15,7 @@ class NotificationController extends GetxController {
   String? _fcmToken;
   var bookingId = "".obs;
   var driverId = "".obs;
+  var hint = "".obs;
 
   String? get fcmToken => _fcmToken;
 
@@ -75,30 +77,32 @@ class NotificationController extends GetxController {
       final title = notification.title;
       final body = notification.body;
 
-      // Do something with the notification
-      // For example, show a local notification or update app state
-      // You can use packages like flutter_local_notifications for local notifications
-      Get.snackbar(title!, body!);
-      // Print the notification details for debugging
+      Get.snackbar(
+        title!,
+        body!,
+        backgroundColor: Colors.green.shade300,
+      );
     }
 
     if (data.isNotEmpty) {
       // Handle the custom data payload
       // Access the data fields using the data map
-      final bookingData = data['bookingData'];
+
       user = data['user'];
 
       // Do something with the booking data
       // For example, update app state or perform a specific action based on the data
       if (user == "driver") {
+        final bookingData = data['bookingData'];
         Get.to(() => const BookFoundPage());
-        Get.snackbar("Booking Data", bookingData.toString());
+        // Get.snackbar("Booking Data", bookingData.toString());
 
         updateBookingId(bookingData);
       } else if (user == "passenger") {
         var driverID = data['driverId'];
+        hint(data['hint']);
+        Get.snackbar("Hint", hint.value);
         Get.to(() => const DriverFoundPage());
-        Get.snackbar("Driver ID", bookingData.toString());
         updateDriverId(driverID);
       }
     }
@@ -118,17 +122,19 @@ class NotificationController extends GetxController {
   // Firebase Cloud Messaging endpoint
   final String fcmEndpoint = 'https://fcm.googleapis.com/fcm/send';
 
-  Future<void> sendNotification(driverId, passengerToken) async {
+  Future<void> sendNotification(
+      driverId, passengerToken, String title, String body, String hint) async {
     // Define your notification payload
     final Map<String, dynamic> notification = {
-      'title': 'Driver Found',
-      'body': 'The Driver is on his way to pick you up',
+      'title': title,
+      'body': body,
     };
 
     // Define the message data payload
     final Map<String, dynamic> data = {
       'user': 'passenger',
       'driverId': driverId,
+      'hint': hint,
     };
 
     // Define the FCM message
@@ -157,12 +163,12 @@ class NotificationController extends GetxController {
       );
 
       if (response.statusCode == 200) {
-        print('Notification sent successfully');
+        debugPrint('Notification sent successfully');
       } else {
-        print('Failed to send notification. Error: ${response.body}');
+        debugPrint('Failed to send notification. Error: ${response.body}');
       }
     } catch (e) {
-      print('Error sending notification: $e');
+      debugPrint('Error sending notification: $e');
     }
   }
 }

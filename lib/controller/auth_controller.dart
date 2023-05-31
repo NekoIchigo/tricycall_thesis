@@ -13,6 +13,7 @@ import 'package:flutter_google_places/flutter_google_places.dart';
 import 'package:geocoding/geocoding.dart' as geoCoding;
 import 'package:geolocator/geolocator.dart';
 import 'package:get/get.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:google_maps_webservice/places.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -264,6 +265,29 @@ class AuthController extends GetxController {
     return (await fi.image.toByteData(format: ui.ImageByteFormat.png))!
         .buffer
         .asUint8List();
+  }
+
+  showErrorDialog(String title, String errorMsg, Function confirm) {
+    Get.defaultDialog(
+      title: title,
+      titleStyle:
+          GoogleFonts.varelaRound(fontSize: 16, fontWeight: FontWeight.bold),
+      content: Text(
+        errorMsg,
+        style:
+            GoogleFonts.varelaRound(fontSize: 14, fontWeight: FontWeight.bold),
+      ),
+      confirm: ElevatedButton(
+        onPressed: () {
+          confirm();
+        },
+        child: Text(
+          "Confirm",
+          style: GoogleFonts.varelaRound(
+              fontSize: 14, fontWeight: FontWeight.bold),
+        ),
+      ),
+    );
   }
 
   /*

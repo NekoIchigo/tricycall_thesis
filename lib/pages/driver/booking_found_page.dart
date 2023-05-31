@@ -13,7 +13,9 @@ import 'package:tricycall_thesis/controller/driver_controller.dart';
 
 import '../../controller/auth_controller.dart';
 import '../../controller/notification_controller.dart';
+import '../../models/booking_model.dart';
 import 'driver_drawer.dart';
+import 'driver_home_page.dart';
 
 class BookFoundPage extends StatefulWidget {
   const BookFoundPage({super.key});
@@ -22,7 +24,6 @@ class BookFoundPage extends StatefulWidget {
   State<BookFoundPage> createState() => _BookFoundPageState();
 }
 
-// TODO : Draw polyline
 class _BookFoundPageState extends State<BookFoundPage> {
   final googleApiKey = "AIzaSyBFPJ9b4hwLh_CwUAPEe8aMIGT4deavGCk";
   AuthController authController = Get.find<AuthController>();
@@ -31,16 +32,14 @@ class _BookFoundPageState extends State<BookFoundPage> {
       Get.find<NotificationController>();
   DriverController driverController = Get.find<DriverController>();
 
-  String userUid = "", bookingId = "";
   GlobalKey<ScaffoldState> scaffoldState = GlobalKey<ScaffoldState>();
   Position? _currentLocation;
-  String sourceText = "", destinationText = "", notesFromPassenger = "";
-  // ignore: prefer_typing_uninitialized_variables
-  var price, passengerToken;
 
   List<LatLng> polylineCoordinates = [];
   Set<Marker> markers = <Marker>{};
   Map<PolylineId, Polyline> polylines = {};
+
+  bool isLoading = false;
 
   BitmapDescriptor sourceIcon = BitmapDescriptor.defaultMarker,
       destinationIcon = BitmapDescriptor.defaultMarker,
@@ -84,7 +83,7 @@ class _BookFoundPageState extends State<BookFoundPage> {
         );
       }
       // Defining an ID
-      PolylineId id = PolylineId('poly');
+      PolylineId id = const PolylineId('poly');
 
       // Initializing Polyline
       Polyline polyline = Polyline(
@@ -101,56 +100,46 @@ class _BookFoundPageState extends State<BookFoundPage> {
   }
 
   getBookingData() async {
-    bookingId = notificationController.bookingId.value;
+    driverController.bookingId.value = notificationController.bookingId.value;
     var bookingSnapshot = await FirebaseFirestore.instance
         .collection("bookings")
-        .doc(bookingId.toString())
+        .doc(driverController.bookingId.value.toString())
         .get();
 
-    Get.snackbar("Booking ID", bookingId);
+    // Get.snackbar("Booking ID", bookingId);
     if (bookingSnapshot.exists) {
-      var bookingData = bookingSnapshot.data();
-      Get.snackbar("Booking Check", "Booking Exists");
-      if (bookingData != null) {
-        var sourceLocation = bookingData['pick_up_location'];
-        var destination = bookingData['drop_off_location'];
+      driverController.bookingInfo.value =
+          BookingModel.fromJson(bookingSnapshot.data()!);
 
-        price = bookingData['price'];
-        sourceText = bookingData['pick_up_text'];
-        destinationText = bookingData['drop_off_text'];
-        notesFromPassenger = bookingData['note_to_driver'] ?? "No notes";
-        passengerToken = bookingData['passenger_token'];
-        // sourceText = await authController.getAddressFromLatLng(
-        //     sourceLocation.latitude, sourceLocation.longitude);
-        // destinationText = await authController.getAddressFromLatLng(
-        //     destination.latitude, destination.longitude);
+      setState(() {
+        markers.add(Marker(
+          markerId: const MarkerId("source"),
+          icon: sourceIcon,
+          position: LatLng(
+            driverController.bookingInfo.value.sourceLoc!.latitude,
+            driverController.bookingInfo.value.sourceLoc!.longitude,
+          ),
+        ));
 
-        setState(() {
-          markers.add(Marker(
-            markerId: const MarkerId("source"),
-            icon: sourceIcon,
-            position: LatLng(sourceLocation.latitude, sourceLocation.longitude),
-          ));
-
-          markers.add(Marker(
-            markerId: const MarkerId("destination"),
-            icon: destinationIcon,
-            position: LatLng(destination.latitude, destination.longitude),
-          ));
-          getPolyPoints(sourceLocation, destination);
-        });
-      }
+        markers.add(Marker(
+          markerId: const MarkerId("destination"),
+          icon: destinationIcon,
+          position: LatLng(
+            driverController.bookingInfo.value.destinaiton!.latitude,
+            driverController.bookingInfo.value.destinaiton!.longitude,
+          ),
+        ));
+        getPolyPoints(
+          driverController.bookingInfo.value.sourceLoc,
+          driverController.bookingInfo.value.destinaiton,
+        );
+      });
     }
-  }
-
-  getUid() async {
-    userUid = await authController.getCurrentUserUid();
   }
 
   @override
   initState() {
     super.initState();
-    getUid();
     _getCurrentPosition();
     setCustomMarkerIcon();
     // getPaymentMethod();
@@ -188,7 +177,9 @@ class _BookFoundPageState extends State<BookFoundPage> {
             decoration: const BoxDecoration(
               color: Color(0xFFE7FFF4),
             ),
-            child: interactionSection(),
+            child: isLoading
+                ? const CircularProgressIndicator()
+                : interactionSection(),
           )
         ],
       ),
@@ -234,7 +225,7 @@ class _BookFoundPageState extends State<BookFoundPage> {
             width: Get.width * .75,
             child: Text.rich(
               TextSpan(
-                text: sourceText == "" ? "Pick up at..." : sourceText,
+                text: driverController.bookingInfo.value.sourceText ?? "",
                 style: GoogleFonts.varelaRound(
                     fontSize: 16, fontWeight: FontWeight.bold),
               ),
@@ -249,8 +240,7 @@ class _BookFoundPageState extends State<BookFoundPage> {
             width: Get.width * .75,
             child: Text.rich(
               TextSpan(
-                text:
-                    destinationText == "" ? "Drop off at..." : destinationText,
+                text: driverController.bookingInfo.value.destinationText ?? "",
                 style: GoogleFonts.varelaRound(
                     fontSize: 16, fontWeight: FontWeight.bold),
               ),
@@ -348,7 +338,7 @@ class _BookFoundPageState extends State<BookFoundPage> {
                       borderRadius: BorderRadius.circular(20),
                     ),
                     child: Text(
-                      notesFromPassenger,
+                      driverController.bookingInfo.value.notes ?? "",
                       style: GoogleFonts.varelaRound(
                         fontSize: 14,
                         color: Colors.green,
@@ -388,7 +378,7 @@ class _BookFoundPageState extends State<BookFoundPage> {
             ),
             const SizedBox(width: 5),
             Text(
-              "$price",
+              "${driverController.bookingInfo.value.price}",
               style: GoogleFonts.varelaRound(
                 fontSize: 20,
                 fontWeight: FontWeight.bold,
@@ -400,9 +390,24 @@ class _BookFoundPageState extends State<BookFoundPage> {
           width: Get.width,
           margin: const EdgeInsets.symmetric(horizontal: 20),
           child: OutlinedButton(
-            onPressed: () {
-              print("uid: $userUid, bookingId: $bookingId, Accepted");
-              notificationController.sendNotification(userUid, passengerToken);
+            onPressed: () async {
+              isLoading = true;
+              try {
+                await notificationController.sendNotification(
+                  driverController.bookingInfo.value.driverId,
+                  driverController.bookingInfo.value.passengerToken,
+                  "Driver Found",
+                  "The Driver is on his way to pick you up",
+                  "driver_found",
+                );
+                isLoading = false;
+                driverController.isDriverBooked.value = true;
+                Get.to(() => const DriverHomePage());
+              } catch (error) {
+                isLoading = false;
+                authController.showErrorDialog("Error", "Something went wrong",
+                    () {}); // TODO: update driver to online then return to driver home
+              }
             },
             style: OutlinedButton.styleFrom(
               side: const BorderSide(color: Colors.black),
@@ -445,9 +450,13 @@ class _BookFoundPageState extends State<BookFoundPage> {
           margin: const EdgeInsets.symmetric(horizontal: 20),
           child: OutlinedButton(
             onPressed: () {
-              print("uid: $userUid, bookingId: $bookingId, Declined");
               driverController.sendDriverResponse(
-                  userUid, bookingId, "declined");
+                driverController.bookingInfo.value.driverId!,
+                driverController.bookingId.value,
+                "declined",
+              );
+              driverController.isDriverBooked.value = false;
+              Get.to(() => const DriverHomePage());
             },
             style: OutlinedButton.styleFrom(
               side: const BorderSide(color: Colors.black),
@@ -456,12 +465,14 @@ class _BookFoundPageState extends State<BookFoundPage> {
                   borderRadius: BorderRadius.circular(30)),
               backgroundColor: Colors.white,
             ),
-            child: Text("Decline",
-                style: GoogleFonts.varelaRound(
-                  fontSize: 18,
-                  color: Colors.black,
-                  fontWeight: FontWeight.bold,
-                )),
+            child: Text(
+              "Decline",
+              style: GoogleFonts.varelaRound(
+                fontSize: 18,
+                color: Colors.black,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
           ),
         ),
       ],

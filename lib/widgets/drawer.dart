@@ -151,7 +151,8 @@ Widget drawerHeader() {
         children: [
           InkWell(
             onTap: () {
-              Get.to(() => const AccountSettingPage());
+              print("User info: ${pasengerController.myUser.value}");
+              // Get.to(() => const AccountSettingPage());
             },
             child: CircleAvatar(
               backgroundColor: Colors.white,

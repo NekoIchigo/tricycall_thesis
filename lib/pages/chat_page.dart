@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 class ChatPage extends StatefulWidget {
   const ChatPage({super.key});
@@ -20,6 +21,11 @@ class _ChatPageState extends State<ChatPage> {
             Get.back();
           },
           icon: const Icon(Icons.arrow_back),
+        ),
+        title: Text(
+          "User Name",
+          style: GoogleFonts.varelaRound(
+              fontSize: 14, fontWeight: FontWeight.bold),
         ),
       ),
       body: SafeArea(
