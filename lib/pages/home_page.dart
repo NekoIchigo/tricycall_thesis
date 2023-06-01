@@ -91,7 +91,7 @@ class _HomePageState extends State<HomePage> {
         'assets/images/destination_icon.png', 50);
     destinationIcon = BitmapDescriptor.fromBytes(destination);
     final Uint8List driverIcon = await authController.getBytesFromAsset(
-        'assets/images/tricycle_icon.png', 80);
+        'assets/images/tricycle_icon.png', 50);
     driversIcon = BitmapDescriptor.fromBytes(driverIcon);
   }
 
@@ -275,19 +275,25 @@ class _HomePageState extends State<HomePage> {
                   height: Get.height * .55,
                   child: googleMap(),
                 ),
-          Container(
-            height: Get.height * .25,
-            decoration: const BoxDecoration(
-              color: Colors.white,
+          SingleChildScrollView(
+            child: Column(
+              children: [
+                Container(
+                  height: Get.height * .25,
+                  decoration: const BoxDecoration(
+                    color: Colors.white,
+                  ),
+                  child: interactionSection(),
+                ),
+                Container(
+                  height: Get.height * .20,
+                  decoration: const BoxDecoration(
+                    color: Color(0xFFE7FFF4),
+                  ),
+                  child: informationDetails(),
+                ),
+              ],
             ),
-            child: interactionSection(),
-          ),
-          Container(
-            height: Get.height * .20,
-            decoration: const BoxDecoration(
-              color: Color(0xFFE7FFF4),
-            ),
-            child: informationDetails(),
           )
         ],
       ),

@@ -39,7 +39,6 @@ class _DriverHomePageState extends State<DriverHomePage> {
   Set<Marker> markers = <Marker>{};
 
   var userUid = "";
-  var lat = "14.5547", lng = "121.0244";
 
   String status = "";
   bool isNear = false;
@@ -151,13 +150,13 @@ class _DriverHomePageState extends State<DriverHomePage> {
         if (driverController.isDriverBooked.value) {
           if (driverController.isPickUp.value) {
             navigateToDestination(
-              50,
+              80,
               driverController.bookingInfo.value.destinaiton!,
               LatLng(_currentLocation!.latitude, _currentLocation!.longitude),
             );
           } else {
             navigateToDestination(
-              100,
+              80,
               driverController.bookingInfo.value.sourceLoc!,
               LatLng(_currentLocation!.latitude, _currentLocation!.longitude),
             );
@@ -332,6 +331,19 @@ class _DriverHomePageState extends State<DriverHomePage> {
                     icon: const Icon(Icons.navigation_rounded,
                         color: Colors.white),
                     onPressed: () async {
+                      // ignore: prefer_typing_uninitialized_variables
+                      double lat = 0.0, lng = 0.0;
+                      if (driverController.isPickUp.value) {
+                        lat = driverController
+                            .bookingInfo.value.destinaiton!.latitude;
+                        lng = driverController
+                            .bookingInfo.value.destinaiton!.longitude;
+                      } else {
+                        lat = driverController
+                            .bookingInfo.value.sourceLoc!.latitude;
+                        lng = driverController
+                            .bookingInfo.value.sourceLoc!.longitude;
+                      }
                       await launchUrl(Uri.parse(
                           'google.navigation:q=$lat,$lng&key=$googleApiKey'));
                     },
@@ -396,6 +408,14 @@ class _DriverHomePageState extends State<DriverHomePage> {
       onPressed: () {
         if (isArrive) {
           if (driverController.isPickUp.value) {
+            polylineCoordinates.clear();
+            notificationController.sendNotification(
+              driverController.bookingInfo.value.driverId,
+              driverController.bookingInfo.value.passengerToken,
+              "Arrive at your destination!",
+              "Please pay the driver to finish the transaction",
+              "destination_arrive",
+            );
             Get.defaultDialog(
                 confirm: Container(
                   width: Get.width * .75,
@@ -449,6 +469,7 @@ class _DriverHomePageState extends State<DriverHomePage> {
                 ));
           } else {
             driverController.isPickUp.value = true;
+            isNear = false;
             notificationController.sendNotification(
               driverController.bookingInfo.value.driverId,
               driverController.bookingInfo.value.passengerToken,
@@ -476,7 +497,11 @@ class _DriverHomePageState extends State<DriverHomePage> {
               RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
           side: BorderSide(color: Colors.green.shade900, width: 2)),
       child: Text(
-        isArrive ? "PICK UP PASSENGER" : "ARRIVE AT LOCATION",
+        isArrive
+            ? driverController.isPickUp.value
+                ? "ARRIVE AT LOCATION"
+                : "PICK UP PASSENGER"
+            : "ARRIVE AT PICK UP LOCATION",
         style: GoogleFonts.varelaRound(
           fontWeight: FontWeight.bold,
         ),
@@ -535,6 +560,21 @@ class _DriverHomePageState extends State<DriverHomePage> {
             margin: const EdgeInsets.symmetric(horizontal: 20),
             child: ElevatedButton(
               onPressed: () {
+                notificationController.sendNotification(
+                  driverController.bookingInfo.value.driverId,
+                  driverController.bookingInfo.value.passengerToken,
+                  "Transaction Complete!",
+                  "Thank you for using our application",
+                  "transaction_complete",
+                );
+                isArrive = false;
+                driverController.isDriverBooked.value = false;
+                driverController.isPickUp.value = false;
+                isNear = false;
+                updateStatus("online");
+                markers.remove(const MarkerId(
+                    "destination_marker")); // TODO check if marker is remove
+                setState(() {});
                 Get.back();
               },
               style: ElevatedButton.styleFrom(

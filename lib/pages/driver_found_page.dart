@@ -10,9 +10,11 @@ import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:flutter_rating_bar/flutter_rating_bar.dart';
+import 'package:tricycall_thesis/controller/driver_controller.dart';
 
 import '../controller/notification_controller.dart';
 import '../controller/passenger_controller.dart';
+import '../models/booking_model.dart';
 import '../widgets/drawer.dart';
 import 'chat_page.dart';
 
@@ -28,6 +30,7 @@ class _DriverFoundPageState extends State<DriverFoundPage> {
 
   GlobalKey<ScaffoldState> scaffoldState = GlobalKey<ScaffoldState>();
   PassengerController passengerController = Get.find<PassengerController>();
+  DriverController driverController = Get.find<DriverController>();
   NotificationController notificationController =
       Get.find<NotificationController>();
 
@@ -38,6 +41,8 @@ class _DriverFoundPageState extends State<DriverFoundPage> {
   Position? _currentLocation;
   Set<Marker> markers = <Marker>{};
   String driverIdFromBooking = "";
+
+  late BookingModel bookingInfo;
 
   Future<void> _getCurrentPosition() async {
     final hasPermission = await authController.handleLocationPermission();
@@ -70,13 +75,16 @@ class _DriverFoundPageState extends State<DriverFoundPage> {
     setState(() {});
   }
 
-  BitmapDescriptor currentLocIcon = BitmapDescriptor.defaultMarker;
+  BitmapDescriptor destinationIcon = BitmapDescriptor.defaultMarker;
   BitmapDescriptor driverLocIcon = BitmapDescriptor.defaultMarker;
 
   void setCustomMarkerIcon() async {
     final Uint8List driverIcon = await authController.getBytesFromAsset(
-        'assets/images/tricycle_icon.png', 80);
+        'assets/images/tricycle_icon.png', 50);
     driverLocIcon = BitmapDescriptor.fromBytes(driverIcon);
+    final Uint8List destinaitnIcon = await authController.getBytesFromAsset(
+        'assets/images/tricycle_icon.png', 50);
+    destinationIcon = BitmapDescriptor.fromBytes(destinaitnIcon);
   }
 
   Future<void> mymap(AsyncSnapshot<QuerySnapshot> snapshot) async {
@@ -95,11 +103,13 @@ class _DriverFoundPageState extends State<DriverFoundPage> {
 
   getDriverIdFromBooking() async {
     var id = passengerController.bookingId.value;
+
     var bookingData =
         await FirebaseFirestore.instance.collection('bookings').doc(id).get();
 
     if (bookingData.exists) {
       driverIdFromBooking = bookingData.data()!['driver_id'];
+      bookingInfo = BookingModel.fromJson(bookingData.data()!);
     }
   }
 
@@ -132,6 +142,8 @@ class _DriverFoundPageState extends State<DriverFoundPage> {
     getDriverIdFromBooking();
   }
 
+  bool isPolylineCleared = false;
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -159,19 +171,41 @@ class _DriverFoundPageState extends State<DriverFoundPage> {
               driverData['latitude'] as double? ?? 0.0,
               driverData['longitude'] as double? ?? 0.0,
             );
-            final destination =
-                LatLng(_currentLocation!.latitude, _currentLocation!.longitude);
+
+            final destination = bookingInfo.destinaiton;
+            final sourceLoc = bookingInfo.sourceLoc;
 
             if (notificationController.hint.value == "trip_start") {
-              polylineCoordinates.clear();
-            }
-
-            getPolylinePoints(driverLocation, destination)
-                .then((List<LatLng> points) {
-              setState(() {
-                polylineCoordinates = points;
+              if (!isPolylineCleared) polylineCoordinates.clear();
+              isPolylineCleared = true;
+              getPolylinePoints(driverLocation, destination!)
+                  .then((List<LatLng> points) {
+                markers.add(
+                  Marker(
+                    markerId: const MarkerId('destination'),
+                    position: destination,
+                    icon: destinationIcon,
+                  ),
+                );
+                setState(() {
+                  polylineCoordinates = points;
+                });
               });
-            });
+            } else {
+              getPolylinePoints(driverLocation, sourceLoc!)
+                  .then((List<LatLng> points) {
+                markers.add(
+                  Marker(
+                    markerId: const MarkerId('driver'),
+                    position: sourceLoc,
+                    icon: destinationIcon,
+                  ),
+                );
+                setState(() {
+                  polylineCoordinates = points;
+                });
+              });
+            }
 
             markers.add(
               Marker(
@@ -207,7 +241,7 @@ class _DriverFoundPageState extends State<DriverFoundPage> {
                                 polylineId: const PolylineId("route"),
                                 points: polylineCoordinates,
                                 color: Colors.red,
-                                width: 6,
+                                width: 3,
                               ),
                             },
                             markers: markers,
