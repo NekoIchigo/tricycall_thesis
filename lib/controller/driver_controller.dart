@@ -7,10 +7,10 @@ import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:get/get.dart';
-import 'package:google_maps_flutter/google_maps_flutter.dart';
 
 // ignore: depend_on_referenced_packages, library_prefixes
 import 'package:path/path.dart' as Path;
+import 'package:shared_preferences/shared_preferences.dart';
 import '../models/booking_model.dart';
 import '../models/user_model.dart';
 import '../pages/home_page.dart';
@@ -22,6 +22,7 @@ class DriverController extends GetxController {
   var isPickUp = false.obs;
   var bookingId = "".obs;
   var bookingInfo = BookingModel().obs;
+  var chatId = "".obs;
 
   // User token
 
@@ -114,15 +115,67 @@ class DriverController extends GetxController {
     });
   }
 
-  // Future<void> testHealth() async {
-  //   HttpsCallable callable =
-  //       FirebaseFunctions.instance.httpsCallable('checkHelth');
+  updateBookingStatus(String bookingId, String status) async {
+    await FirebaseFirestore.instance
+        .collection('bookings')
+        .doc(bookingId)
+        .update({
+      'status': status,
+      // 'status': status // waiting, ongoing, cancelled, payment, finish
+    });
+  }
 
-  //   final response = await callable.call();
-  //   if (response.data != null) {
-  //     print(response.data);
-  //   }
-  // }
+  initDriverStatus(String token, Position location, String userId) async {
+    SharedPreferences localStorage = await SharedPreferences.getInstance();
+    bool? isInit = localStorage.getBool("isDriverInit");
+    if (isInit!) return; //if not firsttime opening the app
+
+    Timestamp currentTimestamp = Timestamp.now();
+
+    await FirebaseFirestore.instance
+        .collection('driver_status')
+        .doc(userId)
+        .set({
+      'latitude': location.latitude,
+      'longitude': location.longitude,
+      'token': token,
+      'status': 'offline', // offline, online, booked
+      'availability_timestamp': currentTimestamp,
+    });
+    Get.snackbar(
+      "Welcome Driver!",
+      "Go online to start getting bookings",
+      backgroundColor: Colors.green.shade300,
+    );
+    localStorage.setBool("isDriverInit", true);
+  }
+
+  updateStatus(String status, String userId) async {
+    Timestamp currentTimestamp = Timestamp.now();
+    await FirebaseFirestore.instance
+        .collection('driver_status')
+        .doc(userId)
+        .update({
+      'status': status, // 'status': status // offline, online, booked
+      'availability_timestamp': currentTimestamp,
+    });
+  }
+
+  initChatCollection() async {
+    var chatDoc = FirebaseFirestore.instance.collection("chats").doc();
+    chatId(chatDoc.id); // RxString chatId value update with the created chat;
+
+    // Create the chat document with user_id and driver_id fields
+    await chatDoc.set({
+      'user_id': bookingInfo.value.userId,
+      'driver_id': bookingInfo.value.driverId,
+    });
+
+    // Create the messages subcollection within the chat document
+    var messagesCollection = chatDoc.collection("messages");
+    // Create an initial empty document to ensure the 'messages' subcollection exists
+    await messagesCollection.doc().set({});
+  }
 
 // Make an HTTP POST request to the Cloud Function endpoint
   Future<void> sendDriverResponse(

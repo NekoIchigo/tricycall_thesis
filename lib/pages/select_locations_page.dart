@@ -221,7 +221,7 @@ class _SelectLocationsState extends State<SelectLocations> {
   }
 
   Future<String> showGoogleAutoComplete() async {
-    const kGoogleApiKey = "AIzaSyBFPJ9b4hwLh_CwUAPEe8aMIGT4deavGCk";
+    const kGoogleApiKey = "AIzaSyB7S43VLk2wDGlm6gxewv8lwu2FZy-SZzY";
 
     Prediction? p = await PlacesAutocomplete.show(
         offset: 0,

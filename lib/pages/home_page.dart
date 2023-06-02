@@ -33,7 +33,7 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  final googleApiKey = "AIzaSyBFPJ9b4hwLh_CwUAPEe8aMIGT4deavGCk";
+  final googleApiKey = "AIzaSyB7S43VLk2wDGlm6gxewv8lwu2FZy-SZzY";
   final Completer<GoogleMapController> _controller = Completer();
   AuthController authController = Get.find<AuthController>();
   PassengerController passengerController = Get.find<PassengerController>();
@@ -59,10 +59,6 @@ class _HomePageState extends State<HomePage> {
   Position? _currentLocation;
   Set<Marker> markers = <Marker>{};
 
-  BitmapDescriptor sourceIcon = BitmapDescriptor.defaultMarker,
-      destinationIcon = BitmapDescriptor.defaultMarker,
-      driversIcon = BitmapDescriptor.defaultMarker;
-
   bool isBookClicked = false;
   TextEditingController noteToDriver = TextEditingController();
   var userUid = "";
@@ -81,18 +77,6 @@ class _HomePageState extends State<HomePage> {
     }).catchError((e) {
       debugPrint(e);
     });
-  }
-
-  void setCustomMarkerIcon() async {
-    final Uint8List source = await authController.getBytesFromAsset(
-        'assets/images/source_icon.png', 50);
-    sourceIcon = BitmapDescriptor.fromBytes(source);
-    final Uint8List destination = await authController.getBytesFromAsset(
-        'assets/images/destination_icon.png', 50);
-    destinationIcon = BitmapDescriptor.fromBytes(destination);
-    final Uint8List driverIcon = await authController.getBytesFromAsset(
-        'assets/images/tricycle_icon.png', 50);
-    driversIcon = BitmapDescriptor.fromBytes(driverIcon);
   }
 
   getPaymentMethod() async {
@@ -203,14 +187,14 @@ class _HomePageState extends State<HomePage> {
     sourceLocation = await getSourceLatLong();
     markers.add(Marker(
       markerId: const MarkerId("source"),
-      icon: sourceIcon,
+      icon: authController.sourceIcon.value,
       position: sourceLocation,
     ));
 
     destination = await getDestinationLatLong();
     markers.add(Marker(
       markerId: const MarkerId("destination"),
-      icon: destinationIcon,
+      icon: authController.destinationIcon.value,
       position: destination,
     ));
 
@@ -238,7 +222,7 @@ class _HomePageState extends State<HomePage> {
         Marker marker = Marker(
           markerId: MarkerId(documentSnapshot.id),
           position: LatLng(latitude, longitude),
-          icon: driversIcon,
+          icon: authController.driversIcon.value,
         );
 
         markers.add(marker);
@@ -250,7 +234,6 @@ class _HomePageState extends State<HomePage> {
   initState() {
     super.initState();
     _getCurrentPosition();
-    setCustomMarkerIcon();
     getPaymentMethod();
     getCurrentUserUid();
     setPolyPoint();

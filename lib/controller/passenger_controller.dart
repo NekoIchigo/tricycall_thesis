@@ -125,14 +125,26 @@ class PassengerController extends GetxController {
       'pick_up_text': sourceLocation,
       'drop_off_text': destination,
       'passenger_token': token,
-      'status': 'waiting' // waiting, ongoing, cancelled, finish
+      'status': 'waiting' // waiting, ongoing, cancelled, payment, finish
     }, SetOptions(merge: true)).then((value) {
       // isProfileUploading(false);
 
       // Get.to(() => const HomePage());
     });
   }
+
+  updateBookingStatus(String bookingUId, String status) async {
+    await FirebaseFirestore.instance
+        .collection('bookings')
+        .doc(bookingUId)
+        .update({
+      'status': status,
+      // 'status': status // waiting, ongoing, cancelled, payment, finish
+    });
+  }
 }
+
+
 
 // this query gets a stream of user records and deserialize it 
 // to a stream of UserRecord object 

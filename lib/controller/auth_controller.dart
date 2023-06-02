@@ -31,6 +31,22 @@ class AuthController extends GetxController {
   dynamic credentials;
   String? messagingToken;
 
+  Rx<BitmapDescriptor> sourceIcon = BitmapDescriptor.defaultMarker.obs,
+      destinationIcon = BitmapDescriptor.defaultMarker.obs,
+      driversIcon = BitmapDescriptor.defaultMarker.obs;
+
+  void setCustomMarkerIcon() async {
+    final Uint8List source =
+        await getBytesFromAsset('assets/images/source_icon.png', 50);
+    sourceIcon(BitmapDescriptor.fromBytes(source));
+    final Uint8List destination =
+        await getBytesFromAsset('assets/images/destination_icon.png', 50);
+    destinationIcon(BitmapDescriptor.fromBytes(destination));
+    final Uint8List driverIcon =
+        await getBytesFromAsset('assets/images/tricycle_icon.png', 50);
+    driversIcon(BitmapDescriptor.fromBytes(driverIcon));
+  }
+
   getToken() async {
     SharedPreferences localStorage = await SharedPreferences.getInstance();
     messagingToken = await FirebaseMessaging.instance.getToken();
@@ -135,7 +151,7 @@ class AuthController extends GetxController {
 
     final response = await callable.call();
     if (response.data != null) {
-      print(response.data);
+      debugPrint(response.data);
     }
   }
 
@@ -177,57 +193,19 @@ class AuthController extends GetxController {
   Future<LatLng> buildLatLngFromAddress(String place) async {
     List<geoCoding.Location> locations =
         await geoCoding.locationFromAddress(place);
-    print("getlatlng = $place");
+    // print("getlatlng = $place");
     return LatLng(locations.first.latitude, locations.first.longitude);
   }
 
-  Future<String> getAddressFromLatLng(double latitude, double longitude) async {
-    try {
-      List<geoCoding.Placemark> placemarks =
-          await geoCoding.placemarkFromCoordinates(latitude, longitude);
-      if (placemarks.isNotEmpty) {
-        geoCoding.Placemark placemark = placemarks[0];
-        String address = '';
+  addMessageToChat(String chatId, String senderId, String content) async {
+    var chatDoc = FirebaseFirestore.instance.collection("chats").doc(chatId);
+    var messagesCollection = chatDoc.collection("messages");
 
-        if (placemark.name != null) {
-          address += '${placemark.name}, ';
-        }
-        if (placemark.street != null) {
-          address += '${placemark.street}, ';
-        }
-        if (placemark.subThoroughfare != null) {
-          address += '${placemark.subThoroughfare}, ';
-        }
-        if (placemark.thoroughfare != null) {
-          address += '${placemark.thoroughfare}, ';
-        }
-        if (placemark.subLocality != null) {
-          address += '${placemark.subLocality}, ';
-        }
-        if (placemark.locality != null) {
-          address += '${placemark.locality}, ';
-        }
-        // if (placemark.subAdministrativeArea != null) {
-        //   address += '${placemark.subAdministrativeArea}, ';
-        // }
-        // if (placemark.administrativeArea != null) {
-        //   address += '${placemark.administrativeArea}, ';
-        // }
-        // if (placemark.postalCode != null) {
-        //   address += '${placemark.postalCode}, ';
-        // }
-        // if (placemark.country != null) {
-        //   address += placemark.country!;
-        // }
-
-        return address.isNotEmpty ? address : 'Unknown address';
-      } else {
-        return 'No address found';
-      }
-    } catch (e) {
-      print('Error: $e');
-      return 'Unable to fetch address';
-    }
+    await messagesCollection.add({
+      'sender_id': senderId,
+      'content': content,
+      'timestamp': Timestamp.now(),
+    });
   }
 
   Future<Prediction?> showGoogleAutoComplete(BuildContext context) async {
@@ -239,7 +217,7 @@ class AuthController extends GetxController {
       language: "en",
       context: context,
       mode: Mode.overlay,
-      apiKey: "AIzaSyBFPJ9b4hwLh_CwUAPEe8aMIGT4deavGCk",
+      apiKey: "AIzaSyB7S43VLk2wDGlm6gxewv8lwu2FZy-SZzY",
       components: [Component(Component.country, "ph")],
       types: [],
       hint: "Search City",

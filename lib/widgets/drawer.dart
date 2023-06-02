@@ -5,7 +5,6 @@ import 'package:tricycall_thesis/controller/auth_controller.dart';
 import 'package:tricycall_thesis/pages/ride_history_page.dart';
 
 import '../controller/passenger_controller.dart';
-import '../pages/account_setting_page.dart';
 
 PassengerController pasengerController = Get.find<PassengerController>();
 AuthController authController = Get.find<AuthController>();
@@ -151,6 +150,7 @@ Widget drawerHeader() {
         children: [
           InkWell(
             onTap: () {
+              // TODO: Fix draweer
               print("User info: ${pasengerController.myUser.value}");
               // Get.to(() => const AccountSettingPage());
             },

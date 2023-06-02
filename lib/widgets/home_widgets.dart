@@ -1,24 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
-// Future<String> showGoogleAutoComplete() async {
-//   const kGoogleApiKey = "AIzaSyBFPJ9b4hwLh_CwUAPEe8aMIGT4deavGCk";
-
-//   Prediction? p = await PlacesAutocomplete.show(
-//       offset: 0,
-//       types: [],
-//       radius: 1000,
-//       strictbounds: false,
-//       region: 'ph',
-//       context: context,
-//       apiKey: kGoogleApiKey,
-//       mode: Mode.overlay, // Mode.fullscreen
-//       language: "en",
-//       components: [Component(Component.country, "ph")]);
-
-//   return p!.description!;
-// }
-
 Widget buildCurrentLocationIcon() {
   return const CircleAvatar(
     radius: 20,

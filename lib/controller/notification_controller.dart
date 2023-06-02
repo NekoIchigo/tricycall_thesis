@@ -42,11 +42,11 @@ class NotificationController extends GetxController {
 
     // Get the FCM token
     _fcmToken = await _firebaseMessaging.getToken();
-    print('FCM Token: $_fcmToken');
+    debugPrint('FCM Token: $_fcmToken');
 
     // Handle token refresh
     _firebaseMessaging.onTokenRefresh.listen((newToken) {
-      print('Refreshed FCM Token: $newToken');
+      debugPrint('Refreshed FCM Token: $newToken');
       // Send the new token to your server for updating the driver's FCM token
     });
   }
@@ -101,7 +101,8 @@ class NotificationController extends GetxController {
       } else if (user == "passenger") {
         var driverID = data['driverId'];
         hint(data['hint']);
-        Get.snackbar("Hint", hint.value);
+        Get.snackbar("Hint", hint.value,
+            backgroundColor: Colors.amber.shade600);
         Get.to(() => const DriverFoundPage());
         updateDriverId(driverID);
       }

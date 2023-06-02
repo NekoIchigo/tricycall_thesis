@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:tricycall_thesis/widgets/input_text.dart';
 import 'package:regexed_validator/regexed_validator.dart';
 
 import '../controller/passenger_controller.dart';

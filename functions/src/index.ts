@@ -1,12 +1,7 @@
 import * as functions from "firebase-functions";
 import * as admin from "firebase-admin";
-import * as geolib from "geolib";
 
 admin.initializeApp();
-
-exports.checkHelth = functions.https.onCall(async (data, context) => {
-  return "The function is online";
-});
 
 export const bookRide = functions.firestore
   .document("bookings/{bookingId}")
@@ -112,21 +107,19 @@ async function sendNotificationToDevice(
     console.error("Error sending notification:", error);
   }
 }
-
 exports.driverResponse = functions.https.onCall(async (data, context) => {
   const {driverId, bookingId, response} = data;
-  console
-    .log("Request :" + ", " + driverId + ", " + bookingId + ", " + response);
+  console.log("Request:", driverId, bookingId, response);
+
   try {
     const bookingDataSnapshot = await admin.firestore()
       .collection("bookings")
       .doc(bookingId)
       .get();
-    console
-      .log("Booking User ID :" + ", " + bookingDataSnapshot.data()?.user_id);
-    if (response === "declined") {
-      const pickupLocation = bookingDataSnapshot.data()?.pick_up_location;
 
+    console.log("Booking User ID:", bookingDataSnapshot.data()?.user_id);
+
+    if (response === "declined") {
       // Get all online drivers except the one who declined
       const onlineDriversSnapshot = await admin
         .firestore()
@@ -135,30 +128,28 @@ exports.driverResponse = functions.https.onCall(async (data, context) => {
         .where(admin.firestore.FieldPath.documentId(), "!=", driverId)
         .get();
 
-      // Calculate the distance between pickup location and each online driver
-      let nearestDriverId: string | null = null;
-      let nearestDriverDistance: number | null = null;
+      let newDriverId = null;
+      let driverTimestamp : number | null = null;
+      // Specify the type as 'number | null';
 
       onlineDriversSnapshot.forEach((driverSnapshot) => {
         const driverData = driverSnapshot.data();
-        const driverLocation = {
-          latitude: driverData.latitude,
-          longitude: driverData.longitude,
-        };
-        const distance: number = geolib.
-          getDistance(pickupLocation, driverLocation);
-
-        if (nearestDriverDistance === null ||
-          distance < nearestDriverDistance) {
-          nearestDriverId = driverSnapshot.id;
-          nearestDriverDistance = distance;
+        if (
+          driverTimestamp === null ||
+          driverData.timestamp < driverTimestamp
+        ) {
+          newDriverId = driverSnapshot.id;
+          driverTimestamp = driverData.timestamp;
         }
       });
 
-      console.log("Driver ID:" + nearestDriverId);
-      if (nearestDriverId) {
+      console.log("Nearest Driver ID:", newDriverId);
+
+      if (newDriverId) {
+        await bookingDataSnapshot.ref.update({driver_id: newDriverId});
+
         // Send booking offer to the new driver
-        const driverToken = await getDriverToken(nearestDriverId);
+        const driverToken = await getDriverToken(newDriverId);
         const notificationPayload = {
           token: driverToken,
           notification: {
@@ -185,7 +176,7 @@ exports.driverResponse = functions.https.onCall(async (data, context) => {
     }
   } catch (error) {
     console.error("Error:", error);
-    throw new functions.https.
-      HttpsError("internal", "Error sending driver response");
+    throw new functions.https
+      .HttpsError("internal", "Error sending driver response");
   }
 });

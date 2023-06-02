@@ -2,7 +2,6 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:permission_handler/permission_handler.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../controller/auth_controller.dart';
@@ -40,6 +39,7 @@ class _SplashScreenState extends State<SplashScreen> {
     super.initState();
     startTimer();
     authController.getToken();
+    authController.setCustomMarkerIcon();
     restartLocalStorage();
   }
 

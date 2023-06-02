@@ -25,7 +25,7 @@ class BookFoundPage extends StatefulWidget {
 }
 
 class _BookFoundPageState extends State<BookFoundPage> {
-  final googleApiKey = "AIzaSyBFPJ9b4hwLh_CwUAPEe8aMIGT4deavGCk";
+  final googleApiKey = "AIzaSyB7S43VLk2wDGlm6gxewv8lwu2FZy-SZzY";
   AuthController authController = Get.find<AuthController>();
   final Completer<GoogleMapController> _controller = Completer();
   NotificationController notificationController =
@@ -41,10 +41,6 @@ class _BookFoundPageState extends State<BookFoundPage> {
 
   bool isLoading = false;
 
-  BitmapDescriptor sourceIcon = BitmapDescriptor.defaultMarker,
-      destinationIcon = BitmapDescriptor.defaultMarker,
-      currentLocIcon = BitmapDescriptor.defaultMarker;
-
   Future<void> _getCurrentPosition() async {
     await Geolocator.getCurrentPosition(desiredAccuracy: LocationAccuracy.high)
         .then((Position position) async {
@@ -54,18 +50,6 @@ class _BookFoundPageState extends State<BookFoundPage> {
     }).catchError((e) {
       debugPrint(e);
     });
-  }
-
-  void setCustomMarkerIcon() async {
-    final Uint8List source = await authController.getBytesFromAsset(
-        'assets/images/source_icon.png', 50);
-    sourceIcon = BitmapDescriptor.fromBytes(source);
-    final Uint8List destination = await authController.getBytesFromAsset(
-        'assets/images/destination_icon.png', 50);
-    destinationIcon = BitmapDescriptor.fromBytes(destination);
-    final Uint8List currentIcon = await authController.getBytesFromAsset(
-        'assets/images/tricycle_icon.png', 80);
-    currentLocIcon = BitmapDescriptor.fromBytes(currentIcon);
   }
 
   void getPolyPoints(sourceLocation, destination) async {
@@ -114,7 +98,7 @@ class _BookFoundPageState extends State<BookFoundPage> {
       setState(() {
         markers.add(Marker(
           markerId: const MarkerId("source"),
-          icon: sourceIcon,
+          icon: authController.sourceIcon.value,
           position: LatLng(
             driverController.bookingInfo.value.sourceLoc!.latitude,
             driverController.bookingInfo.value.sourceLoc!.longitude,
@@ -123,7 +107,7 @@ class _BookFoundPageState extends State<BookFoundPage> {
 
         markers.add(Marker(
           markerId: const MarkerId("destination"),
-          icon: destinationIcon,
+          icon: authController.destinationIcon.value,
           position: LatLng(
             driverController.bookingInfo.value.destinaiton!.latitude,
             driverController.bookingInfo.value.destinaiton!.longitude,
@@ -141,7 +125,6 @@ class _BookFoundPageState extends State<BookFoundPage> {
   initState() {
     super.initState();
     _getCurrentPosition();
-    setCustomMarkerIcon();
     // getPaymentMethod();
     getBookingData();
   }
@@ -399,6 +382,10 @@ class _BookFoundPageState extends State<BookFoundPage> {
                   "Driver Found",
                   "The Driver is on his way to pick you up",
                   "driver_found",
+                );
+                driverController.updateBookingStatus(
+                  driverController.bookingId.value,
+                  "ongoing",
                 );
                 isLoading = false;
                 driverController.isDriverBooked.value = true;

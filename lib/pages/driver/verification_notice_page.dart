@@ -3,8 +3,6 @@ import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:tricycall_thesis/pages/login_page.dart';
 
-import 'driver_home_page.dart';
-
 class VerificationNoticePage extends StatefulWidget {
   const VerificationNoticePage({super.key});
 

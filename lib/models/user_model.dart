@@ -1,5 +1,3 @@
-// TODO : Create a driver status collection to store the current online and their location
-
 class UserModel {
   String? firstName;
   String? lastName;
