@@ -25,7 +25,7 @@ class BookFoundPage extends StatefulWidget {
 }
 
 class _BookFoundPageState extends State<BookFoundPage> {
-  final googleApiKey = "AIzaSyB7S43VLk2wDGlm6gxewv8lwu2FZy-SZzY";
+  final googleApiKey = "AIzaSyCbYWT5IPpryxcCqNmO_4EyFFCpIejPBf8";
   AuthController authController = Get.find<AuthController>();
   final Completer<GoogleMapController> _controller = Completer();
   NotificationController notificationController =
@@ -103,6 +103,7 @@ class _BookFoundPageState extends State<BookFoundPage> {
             driverController.bookingInfo.value.sourceLoc!.latitude,
             driverController.bookingInfo.value.sourceLoc!.longitude,
           ),
+          infoWindow: const InfoWindow(title: "Passenger pick up location"),
         ));
 
         markers.add(Marker(
@@ -112,6 +113,7 @@ class _BookFoundPageState extends State<BookFoundPage> {
             driverController.bookingInfo.value.destinaiton!.latitude,
             driverController.bookingInfo.value.destinaiton!.longitude,
           ),
+          infoWindow: const InfoWindow(title: "Passenger drop off location"),
         ));
         getPolyPoints(
           driverController.bookingInfo.value.sourceLoc,
@@ -134,37 +136,47 @@ class _BookFoundPageState extends State<BookFoundPage> {
     return Scaffold(
       key: scaffoldState,
       drawer: driverDrawer(),
-      body: Column(
-        children: [
-          _currentLocation == null
-              ? const Center(
-                  child: CircularProgressIndicator(
-                    color: Colors.green,
-                  ),
-                )
-              : SizedBox(
-                  height: Get.height * .60,
-                  child: googleMap(),
+      body: SingleChildScrollView(
+        child: SizedBox(
+          height: Get.height,
+          width: Get.width,
+          child: Column(
+            children: [
+              _currentLocation == null
+                  ? const Center(
+                      child: CircularProgressIndicator(
+                        color: Colors.green,
+                      ),
+                    )
+                  : GestureDetector(
+                      behavior:
+                          HitTestBehavior.opaque, // Absorb the scroll gestures
+                      child: SizedBox(
+                        height: Get.height * .60,
+                        child: googleMap(),
+                      ),
+                    ),
+              Container(
+                height: Get.height * .18,
+                width: Get.width,
+                decoration: const BoxDecoration(
+                  color: Colors.white,
                 ),
-          Container(
-            height: Get.height * .18,
-            width: Get.width,
-            decoration: const BoxDecoration(
-              color: Colors.white,
-            ),
-            child: informationDetails(),
+                child: informationDetails(),
+              ),
+              Container(
+                height: Get.height * .22,
+                width: Get.width,
+                decoration: const BoxDecoration(
+                  color: Color(0xFFE7FFF4),
+                ),
+                child: isLoading
+                    ? const CircularProgressIndicator()
+                    : interactionSection(),
+              )
+            ],
           ),
-          Container(
-            height: Get.height * .22,
-            width: Get.width,
-            decoration: const BoxDecoration(
-              color: Color(0xFFE7FFF4),
-            ),
-            child: isLoading
-                ? const CircularProgressIndicator()
-                : interactionSection(),
-          )
-        ],
+        ),
       ),
     );
   }
@@ -387,6 +399,7 @@ class _BookFoundPageState extends State<BookFoundPage> {
                   driverController.bookingId.value,
                   "ongoing",
                 );
+                driverController.initChatCollection();
                 isLoading = false;
                 driverController.isDriverBooked.value = true;
                 Get.to(() => const DriverHomePage());
@@ -487,7 +500,7 @@ class _BookFoundPageState extends State<BookFoundPage> {
             markers: markers,
           ),
           Positioned(
-            top: 10,
+            top: 50,
             left: 20,
             child: CircleAvatar(
               radius: 20,

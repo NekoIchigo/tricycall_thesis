@@ -3,7 +3,6 @@ import 'dart:developer';
 import 'dart:ui' as ui;
 
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:cloud_functions/cloud_functions.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
@@ -30,6 +29,7 @@ class AuthController extends GetxController {
   int? resendTokenId;
   dynamic credentials;
   String? messagingToken;
+  RxString userUID = "".obs;
 
   Rx<BitmapDescriptor> sourceIcon = BitmapDescriptor.defaultMarker.obs,
       destinationIcon = BitmapDescriptor.defaultMarker.obs,
@@ -82,6 +82,16 @@ class AuthController extends GetxController {
     }
   }
 
+  getPhoneNumber() {
+    User? user = FirebaseAuth.instance.currentUser;
+    if (user != null && user.phoneNumber != null) {
+      String phoneNumber = user.phoneNumber!;
+      return phoneNumber;
+    } else {
+      Get.snackbar('Error', 'Phone number not available');
+    }
+  }
+
   verifyOtp(String otpNumber) async {
     log("Called");
     PhoneAuthCredential credential =
@@ -97,6 +107,7 @@ class AuthController extends GetxController {
   }
 
   var isDecided = false;
+  var isRegistered = true.obs;
 
   decideRoute() async {
     SharedPreferences localStorage = await SharedPreferences.getInstance();
@@ -110,6 +121,7 @@ class AuthController extends GetxController {
     localStorage.setString("user_uid", user?.uid ?? "");
 
     if (user != null) {
+      userUID(user.uid);
       FirebaseFirestore.instance
           .collection('users')
           .doc(user.uid)
@@ -121,10 +133,9 @@ class AuthController extends GetxController {
             Get.offAll(() => const DriverHomePage());
           } else if (userinfo.role == "passenger") {
             Get.offAll(() => const HomePage());
-          } else {
-            // TODO : Admin Pages
           }
         } else {
+          isRegistered(false);
           Get.offAll(() => const AccountSettingPage());
         }
       }).catchError((e) {
@@ -136,6 +147,16 @@ class AuthController extends GetxController {
   }
 
   signOut() async {
+    SharedPreferences localStorage = await SharedPreferences.getInstance();
+
+    localStorage.setString("payment_method", "CASH");
+    localStorage.setString("note_to_driver", "");
+    localStorage.setString("source", "");
+    localStorage.setString("destination", "");
+    localStorage.setString("total_distance", "");
+    localStorage.setDouble("travel_price", 0.0);
+    localStorage.setBool("isDriverInit", false);
+
     await FirebaseAuth.instance.signOut();
     Get.offAll(() => const LoginPage());
     User? user = FirebaseAuth.instance.currentUser;
@@ -144,21 +165,26 @@ class AuthController extends GetxController {
     }
   }
 
-  // ------------------------------------------- CLOUD FUNCTIONS -------------------------------
-  Future<void> testHealth() async {
-    HttpsCallable callable =
-        FirebaseFunctions.instance.httpsCallable('checkHelth');
-
-    final response = await callable.call();
-    if (response.data != null) {
-      debugPrint(response.data);
-    }
-  }
-
   // ------------------------------------------- UNIVERSAL FUNCTIONS -------------------------------
   getCurrentUserUid() async {
     User? user = FirebaseAuth.instance.currentUser;
     return user!.uid;
+  }
+
+  getUserData(String userId) async {
+    UserModel? userData;
+    var result =
+        await FirebaseFirestore.instance.collection("users").doc(userId).get();
+    if (result.exists) {
+      userData = UserModel.fromJson(result.data()!);
+    } else {
+      Get.snackbar(
+        "User not found",
+        "No user found in provided ID",
+        backgroundColor: Colors.red.shade200,
+      );
+    }
+    return userData;
   }
 
   Future<bool> handleLocationPermission() async {
@@ -217,7 +243,8 @@ class AuthController extends GetxController {
       language: "en",
       context: context,
       mode: Mode.overlay,
-      apiKey: "AIzaSyB7S43VLk2wDGlm6gxewv8lwu2FZy-SZzY",
+      apiKey:
+          "AIzaSyCbYWT5IPpryxcCqNmO_4EyFFCpIejPBf8", // AIzaSyCbYWT5IPpryxcCqNmO_4EyFFCpIejPBf8
       components: [Component(Component.country, "ph")],
       types: [],
       hint: "Search City",

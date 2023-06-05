@@ -1,75 +1,80 @@
+import 'dart:convert';
+
 class UserModel {
   String? firstName;
   String? lastName;
-  String? homeAddress;
-  String? workAddress;
+  // String? homeAddress;
+  // String? workAddress;
   String? role;
   String? email;
-  String? emergencyEmail;
+  String? contactPerson;
   String? image;
+  String? phoneNumber;
 
   UserModel({
     this.firstName,
     this.lastName,
-    this.homeAddress,
-    this.workAddress,
+    // this.homeAddress,
+    // this.workAddress,
     this.role,
     this.email,
-    this.emergencyEmail,
+    this.contactPerson,
     this.image,
+    this.phoneNumber,
   });
-
-  Map<String, dynamic> toJson() {
-    return {
-      'firstName': firstName,
-      'lastName': lastName,
-      'homeAddress': homeAddress,
-      'workAddress': workAddress,
-      'role': role,
-      'email': email,
-      'emergencyEmail': emergencyEmail,
-      'image': image,
-    };
-  }
 
   factory UserModel.fromJson(Map<String, dynamic> map) {
     return UserModel(
-      firstName: map['firstName'],
-      lastName: map['lastName'],
-      homeAddress: map['homeAddress'],
-      workAddress: map['workAddress'],
+      firstName: map['first_name'],
+      lastName: map['last_name'],
+      // homeAddress: map['home_address'],
+      // workAddress: map['work_address'],
       role: map['role'],
       email: map['email'],
-      emergencyEmail: map['emergencyEmail'],
+      contactPerson: map['contact_person'],
       image: map['image'],
+      phoneNumber: map['phone_number'],
     );
   }
 }
 
-// import 'package:google_maps_flutter/google_maps_flutter.dart';
+class DriverModel {
+  String? firstName;
+  String? lastName;
+  String? phoneNumber;
+  String? email;
+  String? operatorName;
+  String? bodyNumber;
+  String? role;
+  String? image;
+  String? tricycleImage;
+  String? licenseImage;
 
-// class UserModel {
-//   String? bAddress;
-//   String? hAddress;
-//   String? mallAddress;
-//   String? name;
-//   String? image;
+  DriverModel({
+    this.firstName,
+    this.lastName,
+    this.phoneNumber,
+    this.email,
+    this.operatorName,
+    this.bodyNumber,
+    this.role,
+    this.image,
+    this.tricycleImage,
+    this.licenseImage,
+  });
 
-//   LatLng? homeAddress;
-//   LatLng? bussinessAddres;
-//   LatLng? shoppingAddress;
-
-
-//   UserModel({this.name,this.mallAddress,this.hAddress,this.bAddress,this.image});
-
-//   UserModel.fromJson(Map<String,dynamic> json){
-//     bAddress = json['business_address'];
-//     hAddress = json['home_address'];
-//     mallAddress = json['shopping_address'];
-//     name = json['name'];
-//     image = json['image'];
-//     homeAddress = LatLng(json['home_latlng'].latitude, json['home_latlng'].longitude);
-//     bussinessAddres = LatLng(json['business_latlng'].latitude, json['business_latlng'].longitude);
-//     shoppingAddress = LatLng(json['shopping_latlng'].latitude, json['shopping_latlng'].longitude);
-//   }
-// }
+  factory DriverModel.fromMap(Map<String, dynamic> map) {
+    return DriverModel(
+      firstName: map['first_name'],
+      lastName: map['last_name'],
+      phoneNumber: map['phone_number'],
+      email: map['email'],
+      operatorName: map['operator_name'],
+      bodyNumber: map['body_number'],
+      role: map['role'],
+      image: map['image'],
+      tricycleImage: map['tricycle_image'],
+      licenseImage: map['license_image'],
+    );
+  }
+}

@@ -2,12 +2,16 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:tricycall_thesis/controller/auth_controller.dart';
+import 'package:tricycall_thesis/pages/about_page.dart';
 import 'package:tricycall_thesis/pages/ride_history_page.dart';
 
 import '../controller/passenger_controller.dart';
+import '../pages/account_setting_page.dart';
+import '../pages/settings_page.dart';
 
 PassengerController pasengerController = Get.find<PassengerController>();
 AuthController authController = Get.find<AuthController>();
+
 Widget buildDrawer() {
   return Drawer(
     child: Stack(
@@ -26,7 +30,12 @@ Widget buildDrawer() {
                     children: [
                       ListTile(
                         onTap: () {
-                          Get.to(() => const RideHistory());
+                          print(
+                              "Passenger Id: ${authController.userUID.value}");
+                          Get.to(() => RideHistory(
+                                userID: authController.userUID.value,
+                                userRole: "passenger",
+                              ));
                         },
                         contentPadding: const EdgeInsets.all(0),
                         leading: const Icon(
@@ -44,6 +53,9 @@ Widget buildDrawer() {
                         ),
                       ),
                       ListTile(
+                        onTap: () {
+                          Get.to(() => const SettingsPage());
+                        },
                         contentPadding: const EdgeInsets.all(0),
                         leading: const Icon(
                           Icons.settings,
@@ -60,6 +72,9 @@ Widget buildDrawer() {
                         ),
                       ),
                       ListTile(
+                        onTap: () {
+                          Get.to(() => const AboutPage());
+                        },
                         contentPadding: const EdgeInsets.all(0),
                         leading: const Icon(
                           Icons.info_outline,
@@ -152,7 +167,7 @@ Widget drawerHeader() {
             onTap: () {
               // TODO: Fix draweer
               print("User info: ${pasengerController.myUser.value}");
-              // Get.to(() => const AccountSettingPage());
+              Get.to(() => const AccountSettingPage());
             },
             child: CircleAvatar(
               backgroundColor: Colors.white,

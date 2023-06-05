@@ -44,6 +44,7 @@ dependencies:
   firebase_messaging: ^14.6.1
   flutter_local_notifications: ^14.1.0
   regexed_validator: ^2.0.0+1
+  intl: ^0.17.0
 
 dev_dependencies:
   flutter_lints: ^2.0.1

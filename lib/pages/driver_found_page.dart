@@ -2,16 +2,13 @@ import 'dart:async';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_polyline_points/flutter_polyline_points.dart';
+import 'package:flutter_rating_bar/flutter_rating_bar.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
-import 'package:flutter_rating_bar/flutter_rating_bar.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:tricycall_thesis/controller/driver_controller.dart';
-import 'package:tricycall_thesis/pages/home_page.dart';
 
 import '../controller/notification_controller.dart';
 import '../controller/passenger_controller.dart';
@@ -27,11 +24,10 @@ class DriverFoundPage extends StatefulWidget {
 }
 
 class _DriverFoundPageState extends State<DriverFoundPage> {
-  final googleApiKey = "AIzaSyB7S43VLk2wDGlm6gxewv8lwu2FZy-SZzY";
+  final googleApiKey = "AIzaSyCbYWT5IPpryxcCqNmO_4EyFFCpIejPBf8";
 
   GlobalKey<ScaffoldState> scaffoldState = GlobalKey<ScaffoldState>();
   PassengerController passengerController = Get.find<PassengerController>();
-  DriverController driverController = Get.find<DriverController>();
   NotificationController notificationController =
       Get.find<NotificationController>();
 
@@ -92,7 +88,6 @@ class _DriverFoundPageState extends State<DriverFoundPage> {
 
   getDriverIdFromBooking() async {
     var id = passengerController.bookingId.value;
-
     var bookingData =
         await FirebaseFirestore.instance.collection('bookings').doc(id).get();
 
@@ -130,15 +125,10 @@ class _DriverFoundPageState extends State<DriverFoundPage> {
     getDriverIdFromBooking();
   }
 
-  bool isPolylineCleared = false;
+  bool isPolyLineDrawned = false;
 
   @override
   Widget build(BuildContext context) {
-    if (notificationController.hint.value == "arrive_at_destination") {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        ratingDialog(); //TODO: check if this works
-      }); // TODO : if payment is gcash show gcash payment dialog
-    }
     return Scaffold(
       drawer: buildDrawer(),
       key: scaffoldState,
@@ -168,30 +158,24 @@ class _DriverFoundPageState extends State<DriverFoundPage> {
           final destination = bookingInfo.destinaiton;
           final sourceLoc = bookingInfo.sourceLoc;
 
-          if (notificationController.hint.value == "trip_start") {
-            if (!isPolylineCleared) polylineCoordinates.clear();
-            isPolylineCleared = true;
-            getPolylinePoints(driverLocation, destination!)
+          if (!isPolyLineDrawned) {
+            isPolyLineDrawned = true;
+            getPolylinePoints(sourceLoc!, destination!)
                 .then((List<LatLng> points) {
+              markers.add(
+                Marker(
+                  markerId: const MarkerId('source'),
+                  position: sourceLoc,
+                  icon: authController.sourceIcon.value,
+                  infoWindow: const InfoWindow(title: "Your pick up location"),
+                ),
+              );
               markers.add(
                 Marker(
                   markerId: const MarkerId('destination'),
                   position: destination,
                   icon: authController.destinationIcon.value,
-                ),
-              );
-              setState(() {
-                polylineCoordinates = points;
-              });
-            });
-          } else {
-            getPolylinePoints(driverLocation, sourceLoc!)
-                .then((List<LatLng> points) {
-              markers.add(
-                Marker(
-                  markerId: const MarkerId('destination'),
-                  position: sourceLoc,
-                  icon: authController.destinationIcon.value,
+                  infoWindow: const InfoWindow(title: "Your drop off location"),
                 ),
               );
               setState(() {
@@ -205,6 +189,7 @@ class _DriverFoundPageState extends State<DriverFoundPage> {
               markerId: const MarkerId('driver'),
               position: driverLocation,
               icon: authController.driversIcon.value,
+              infoWindow: const InfoWindow(title: "Your driver location"),
             ),
           );
 
@@ -255,7 +240,7 @@ class _DriverFoundPageState extends State<DriverFoundPage> {
                     ),
                   ),
                   Positioned(
-                    bottom: 30,
+                    bottom: 80,
                     right: 20,
                     child: CircleAvatar(
                       radius: 20,
@@ -263,13 +248,16 @@ class _DriverFoundPageState extends State<DriverFoundPage> {
                       child: IconButton(
                         icon: const Icon(Icons.chat, color: Colors.white),
                         onPressed: () {
-                          Get.to(() => const ChatPage());
+                          Get.to(() => ChatPage(
+                                bookingId: passengerController.bookingId.value,
+                                senderRole: "passenger",
+                              ));
                         },
                       ),
                     ),
                   ),
                   Positioned(
-                    bottom: 80,
+                    bottom: 30,
                     right: 20,
                     child: CircleAvatar(
                       radius: 20,
@@ -279,6 +267,21 @@ class _DriverFoundPageState extends State<DriverFoundPage> {
                             const Icon(Icons.my_location, color: Colors.white),
                         onPressed: () {
                           centerCamera();
+                        },
+                      ),
+                    ),
+                  ),
+                  Positioned(
+                    bottom: 130,
+                    right: 20,
+                    child: CircleAvatar(
+                      radius: 20,
+                      backgroundColor: Colors.green,
+                      child: IconButton(
+                        icon:
+                            const Icon(Icons.info_outline, color: Colors.white),
+                        onPressed: () {
+                          bookingInfoDialog();
                         },
                       ),
                     ),
@@ -301,61 +304,94 @@ class _DriverFoundPageState extends State<DriverFoundPage> {
         ));
   }
 
-  ratingDialog() {
+  bookingInfoDialog() {
     Get.defaultDialog(
-      title: "ALREADY ARRIVED TO YOUR DESTINATION",
+      title: "Booking Information",
       titleStyle: GoogleFonts.varelaRound(
-        fontSize: 18,
-        color: Colors.green,
-        fontWeight: FontWeight.bold,
-      ),
-      titlePadding: const EdgeInsets.all(20),
+          fontWeight: FontWeight.bold, color: Colors.green),
       content: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            "RATE YOUR DRIVER",
-            style: GoogleFonts.varelaRound(
-              fontSize: 14,
-              fontWeight: FontWeight.bold,
-            ),
+            "From: ",
+            style: GoogleFonts.varelaRound(fontWeight: FontWeight.bold),
+          ),
+          Row(
+            children: [
+              Flexible(
+                child: Text(
+                  bookingInfo.sourceText ?? "Pick up location...",
+                  style: GoogleFonts.varelaRound(),
+                ),
+              ),
+            ],
           ),
           const SizedBox(height: 20),
-          const RatingSection(),
-          const SizedBox(height: 20),
-          Image.asset(
-            "assets/images/sided_tricycle.png",
-            width: 100,
-            fit: BoxFit.cover,
+          Text(
+            "To: ",
+            style: GoogleFonts.varelaRound(fontWeight: FontWeight.bold),
           ),
-          Container(
-            height: 3,
-            width: Get.width,
-            color: Colors.green.shade900,
-          )
+          Row(
+            children: [
+              Flexible(
+                child: Text(
+                  bookingInfo.destinationText ?? "Drop off location...",
+                  style: GoogleFonts.varelaRound(),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 20),
+          Row(
+            children: [
+              Text(
+                "Price: ",
+                style: GoogleFonts.varelaRound(fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(width: 20),
+              Text(
+                "${bookingInfo.price ?? "Drop off location..."}",
+                style: GoogleFonts.varelaRound(),
+              ),
+            ],
+          ),
+          const SizedBox(height: 20),
+          Row(
+            children: [
+              Text(
+                "Payment Method: ",
+                style: GoogleFonts.varelaRound(fontWeight: FontWeight.bold),
+              ),
+              Text(
+                bookingInfo.paymentMethod ?? "CASH",
+                style: GoogleFonts.varelaRound(),
+              )
+            ],
+          ),
+          const SizedBox(height: 20),
+          Text(
+            "Notes: ",
+            style: GoogleFonts.varelaRound(fontWeight: FontWeight.bold),
+          ),
+          Row(
+            children: [
+              Flexible(
+                child: Text(
+                  bookingInfo.notes ?? "No Notes",
+                  style: GoogleFonts.varelaRound(),
+                ),
+              ),
+            ],
+          ),
         ],
       ),
       confirm: ElevatedButton(
-        onPressed: () async {
-          SharedPreferences localStorage =
-              await SharedPreferences.getInstance();
-          localStorage.setString("payment_method", "CASH");
-          localStorage.setString("note_to_driver", "");
-          localStorage.setString("source", "");
-          localStorage.setString("destination", "");
-          localStorage.setString("total_distance", "");
-          localStorage.setDouble("travel_price", 0.0);
-          Get.to(() => const HomePage());
+        onPressed: () {
+          Get.back();
         },
-        style: ElevatedButton.styleFrom(
-            padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 10),
-            shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(20))),
         child: Text(
-          "Confirm",
-          style: GoogleFonts.varelaRound(
-            fontSize: 16,
-            fontWeight: FontWeight.bold,
-          ),
+          "OKAY",
+          style: GoogleFonts.varelaRound(),
         ),
       ),
     );
@@ -370,13 +406,19 @@ class RatingSection extends StatefulWidget {
 }
 
 class _RatingSectionState extends State<RatingSection> {
+  PassengerController passengerController = Get.find<PassengerController>();
+
+  storeRatingInformation(rating) async {
+    SharedPreferences localStorage = await SharedPreferences.getInstance();
+    localStorage.setInt("rating_value", rating);
+  }
+
   @override
   Widget build(BuildContext context) {
     return RatingBar.builder(
-      initialRating: 5,
+      initialRating: 5.0,
       minRating: 1,
       direction: Axis.horizontal,
-      allowHalfRating: true,
       itemCount: 5,
       itemPadding: const EdgeInsets.symmetric(horizontal: 4.0),
       itemBuilder: (context, _) => const Icon(
@@ -384,8 +426,112 @@ class _RatingSectionState extends State<RatingSection> {
         color: Colors.amber,
       ),
       onRatingUpdate: (rating) {
-        // print(rating);
+        storeRatingInformation(rating.toInt());
       },
+    );
+  }
+}
+
+class RatingContent extends StatefulWidget {
+  final String bookindId;
+  final String driverId;
+  const RatingContent({
+    Key? key,
+    required this.bookindId,
+    required this.driverId,
+  }) : super(key: key);
+
+  @override
+  State<RatingContent> createState() => _RatingContentState();
+}
+
+class _RatingContentState extends State<RatingContent> {
+  PassengerController passengerController = Get.find<PassengerController>();
+
+  TextEditingController commentController = TextEditingController();
+  bool addComment = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text(
+              "RATE YOUR DRIVER",
+              style: GoogleFonts.varelaRound(
+                fontSize: 14,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(width: 10),
+            CircleAvatar(
+              backgroundColor: Colors.green,
+              radius: 15,
+              child: IconButton(
+                onPressed: () {
+                  addComment = !addComment;
+                  setState(() {});
+                },
+                icon: const Icon(
+                  Icons.add_comment_rounded,
+                  size: 15,
+                  color: Colors.white,
+                ),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 20),
+        const RatingSection(),
+        const SizedBox(height: 20),
+        addComment
+            ? SizedBox(
+                width: Get.width * .8,
+                child: TextFormField(
+                  controller: commentController,
+                  maxLines: 1,
+                  decoration: InputDecoration(
+                    hintText: "Input your comment here...",
+                    hintStyle: GoogleFonts.varelaRound(),
+                  ),
+                ),
+              )
+            : Image.asset("assets/images/sided_tricycle.png",
+                width: 100, fit: BoxFit.cover),
+        Container(
+          height: 3,
+          width: Get.width,
+          color: Colors.green.shade900,
+        ),
+        ElevatedButton(
+          onPressed: () async {
+            SharedPreferences localStorage =
+                await SharedPreferences.getInstance();
+            localStorage.setString("payment_method", "CASH");
+            localStorage.setString("note_to_driver", "");
+            localStorage.setString("source", "");
+            localStorage.setString("destination", "");
+            localStorage.setString("total_distance", "");
+            localStorage.setDouble("travel_price", 0.0);
+            localStorage.setString("comment_value", commentController.text);
+
+            passengerController.storeRatings(widget.bookindId, widget.driverId);
+          },
+          style: ElevatedButton.styleFrom(
+              padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 10),
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(20))),
+          child: Text(
+            "Confirm",
+            style: GoogleFonts.varelaRound(
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ),
+      ],
     );
   }
 }

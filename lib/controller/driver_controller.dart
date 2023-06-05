@@ -13,6 +13,7 @@ import 'package:path/path.dart' as Path;
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/booking_model.dart';
 import '../models/user_model.dart';
+import '../pages/driver/verification_notice_page.dart';
 import '../pages/home_page.dart';
 
 class DriverController extends GetxController {
@@ -23,16 +24,23 @@ class DriverController extends GetxController {
   var bookingId = "".obs;
   var bookingInfo = BookingModel().obs;
   var chatId = "".obs;
+  var driverData = UserModel().obs;
+  var driverUid = "".obs;
 
   // User token
 
-  uploadImage(File image) async {
+  uploadImage(File image, bool isLicense) async {
     String imageUrl = '';
     String fileName = Path.basename(image.path);
-    Reference reference;
-    reference = FirebaseStorage.instance.ref().child(
-        'users/drivers/$fileName'); // Modify this path/string as your need
+
+    String path =
+        isLicense ? "driver/license/$fileName" : "driver/tricycle/$fileName";
+
+    var reference = FirebaseStorage.instance
+        .ref()
+        .child(path); // Modify this path/string as your need
     UploadTask uploadTask = reference.putFile(image);
+    debugPrint(uploadTask.toString());
     TaskSnapshot taskSnapshot = await uploadTask.whenComplete(() => null);
     await taskSnapshot.ref.getDownloadURL().then(
       (value) {
@@ -45,18 +53,19 @@ class DriverController extends GetxController {
   }
 
   storeDriverApplication(
-    firstName,
-    lastName,
-    mobileNumber,
-    email,
-    operatorName,
-    bodyNumber,
-    licenseFile,
-    tricycleFile,
+    String firstName,
+    String lastName,
+    String mobileNumber,
+    String email,
+    String operatorName,
+    String bodyNumber,
+    File? licenseFile,
+    File? tricycleFile,
   ) async {
+    String licenseUrl = "", tricycleUrl = "";
     if (licenseFile != null && tricycleFile != null) {
-      licenseFile = await uploadImage(licenseFile);
-      tricycleFile = await uploadImage(tricycleFile);
+      licenseUrl = await uploadImage(licenseFile, true);
+      tricycleUrl = await uploadImage(tricycleFile, false);
     }
     FirebaseFirestore.instance.collection('driver_application').doc().set({
       'first_name': firstName,
@@ -65,50 +74,23 @@ class DriverController extends GetxController {
       'email': email,
       'operator_name': operatorName,
       'body_number': bodyNumber,
-      'license_url': licenseFile,
-      'tricycle_pic_url': tricycleFile,
+      'license_url': licenseUrl,
+      'tricycle_pic_url': tricycleUrl,
       'status': "ongoing", // rejected, ongoing, accepted, cancelled
     }, SetOptions(merge: true)).then((value) {
       isProfileUploading(false);
 
-      // Get.to(() => const HomePage());
-    });
-  }
-
-  storeDriverInfo(
-    File? selectedImage,
-    String firstName,
-    String lastName,
-    String email,
-    String emergencyEmail, {
-    String? url = '',
-  }) async {
-    String urlNew = url ?? "";
-    if (selectedImage != null) {
-      urlNew = await uploadImage(selectedImage);
-    }
-    String uid = FirebaseAuth.instance.currentUser!.uid;
-    FirebaseFirestore.instance.collection('users').doc(uid).set({
-      'image': urlNew,
-      'first_name': firstName,
-      'last_name': lastName,
-      'email': email,
-      'role': 'driver',
-      'emergency_email': emergencyEmail,
-    }, SetOptions(merge: true)).then((value) {
-      isProfileUploading(false);
-
-      Get.to(() => const HomePage());
+      Get.to(() => const VerificationNoticePage());
     });
   }
 
   var myUser = UserModel().obs;
 
   getDriverInfo() {
-    String uid = FirebaseAuth.instance.currentUser!.uid;
+    driverUid.value = FirebaseAuth.instance.currentUser!.uid;
     FirebaseFirestore.instance
         .collection('users')
-        .doc(uid)
+        .doc(driverUid.value)
         .snapshots()
         .listen((event) {
       myUser.value = UserModel.fromJson(event.data()!);
@@ -175,6 +157,11 @@ class DriverController extends GetxController {
     var messagesCollection = chatDoc.collection("messages");
     // Create an initial empty document to ensure the 'messages' subcollection exists
     await messagesCollection.doc().set({});
+
+    await FirebaseFirestore.instance
+        .collection("bookings")
+        .doc(bookingId.value)
+        .update({'chat_id': chatId.value});
   }
 
 // Make an HTTP POST request to the Cloud Function endpoint
@@ -198,4 +185,32 @@ class DriverController extends GetxController {
       debugPrint('Error sending driver response: $error');
     }
   }
+
+  /*
+  storeDriverInfo(
+    File? selectedImage,
+    String firstName,
+    String lastName,
+    String email,
+    String emergencyEmail, {
+    String? url = '',
+  }) async {
+    String urlNew = url ?? "";
+    if (selectedImage != null) {
+      urlNew = await uploadImage(selectedImage);
+    }
+    String uid = FirebaseAuth.instance.currentUser!.uid;
+    FirebaseFirestore.instance.collection('users').doc(uid).set({
+      'image': urlNew,
+      'first_name': firstName,
+      'last_name': lastName,
+      'email': email,
+      'role': 'driver',
+      'emergency_email': emergencyEmail,
+    }, SetOptions(merge: true)).then((value) {
+      isProfileUploading(false);
+
+      Get.to(() => const HomePage());
+    });
+  } */
 }

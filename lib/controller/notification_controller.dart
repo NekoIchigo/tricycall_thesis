@@ -2,9 +2,11 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:http/http.dart' as http;
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:tricycall_thesis/pages/driver_found_page.dart';
+import 'package:tricycall_thesis/pages/home_page.dart';
 
 import '../pages/driver/booking_found_page.dart';
 
@@ -101,8 +103,12 @@ class NotificationController extends GetxController {
       } else if (user == "passenger") {
         var driverID = data['driverId'];
         hint(data['hint']);
-        Get.snackbar("Hint", hint.value,
-            backgroundColor: Colors.amber.shade600);
+        if (data['hint'] == "arrive_at_destination") {
+          ratingDialog();
+        } else if (data['hint'] == "transaction_complete") {
+          Get.to(() => const HomePage());
+          return;
+        }
         Get.to(() => const DriverFoundPage());
         updateDriverId(driverID);
       }
@@ -171,5 +177,21 @@ class NotificationController extends GetxController {
     } catch (e) {
       debugPrint('Error sending notification: $e');
     }
+  }
+
+  ratingDialog() {
+    Get.defaultDialog(
+      title: "ALREADY ARRIVED TO YOUR DESTINATION",
+      titleStyle: GoogleFonts.varelaRound(
+        fontSize: 18,
+        color: Colors.green,
+        fontWeight: FontWeight.bold,
+      ),
+      titlePadding: const EdgeInsets.all(20),
+      content: RatingContent(
+        bookindId: bookingId.value,
+        driverId: driverId.value,
+      ),
+    );
   }
 }

@@ -152,6 +152,7 @@ class _SelectLocationsState extends State<SelectLocations> {
                               var result = await showGoogleAutoComplete();
                               dropOffLocation.text = result;
                               setDestinaiton(dropOffLocation.text);
+                              passengerController.isAssignedRoute.value = true;
                               setState(() {});
                               Get.to(() => const HomePage());
                             } else {
@@ -221,7 +222,7 @@ class _SelectLocationsState extends State<SelectLocations> {
   }
 
   Future<String> showGoogleAutoComplete() async {
-    const kGoogleApiKey = "AIzaSyB7S43VLk2wDGlm6gxewv8lwu2FZy-SZzY";
+    const kGoogleApiKey = "AIzaSyCbYWT5IPpryxcCqNmO_4EyFFCpIejPBf8";
 
     Prediction? p = await PlacesAutocomplete.show(
         offset: 0,

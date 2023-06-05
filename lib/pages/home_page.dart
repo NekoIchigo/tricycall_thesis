@@ -1,9 +1,7 @@
 import 'dart:async';
-import 'dart:ui' as ui;
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 
 import 'package:flutter_polyline_points/flutter_polyline_points.dart';
 import 'package:loading_animation_widget/loading_animation_widget.dart';
@@ -33,7 +31,7 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  final googleApiKey = "AIzaSyB7S43VLk2wDGlm6gxewv8lwu2FZy-SZzY";
+  final googleApiKey = "AIzaSyCbYWT5IPpryxcCqNmO_4EyFFCpIejPBf8";
   final Completer<GoogleMapController> _controller = Completer();
   AuthController authController = Get.find<AuthController>();
   PassengerController passengerController = Get.find<PassengerController>();
@@ -168,8 +166,10 @@ class _HomePageState extends State<HomePage> {
 
   setPrice() async {
     SharedPreferences localStorage = await SharedPreferences.getInstance();
-    travelPrice =
-        TariffCalculator.calculateTariff(totalDistance.toInt(), 3, true, true);
+    int totalPassenger = localStorage.getInt("total_passengers") ?? 1;
+    travelPrice = // TODO : fix computation
+        TariffCalculator.calculateTariff(
+            totalDistance.toInt(), totalPassenger, true, true);
     localStorage.setInt("travel_price", travelPrice!.toInt());
   }
 
@@ -181,26 +181,32 @@ class _HomePageState extends State<HomePage> {
   }
 
   setPolyPoint() async {
-    late LatLng sourceLocation;
-    late LatLng destination;
+    if (passengerController.isAssignedRoute.value) {
+      late LatLng sourceLocation;
+      late LatLng destination;
 
-    sourceLocation = await getSourceLatLong();
-    markers.add(Marker(
-      markerId: const MarkerId("source"),
-      icon: authController.sourceIcon.value,
-      position: sourceLocation,
-    ));
+      sourceLocation = await getSourceLatLong();
+      markers.add(Marker(
+        markerId: const MarkerId("source"),
+        icon: authController.sourceIcon.value,
+        position: sourceLocation,
+        infoWindow: const InfoWindow(title: "Your pick up location"),
+      ));
 
-    destination = await getDestinationLatLong();
-    markers.add(Marker(
-      markerId: const MarkerId("destination"),
-      icon: authController.destinationIcon.value,
-      position: destination,
-    ));
+      destination = await getDestinationLatLong();
+      markers.add(Marker(
+        markerId: const MarkerId("destination"),
+        icon: authController.destinationIcon.value,
+        position: destination,
+        infoWindow: const InfoWindow(title: "Your drop off location"),
+      ));
 
-    getPolyPoints(sourceLocation, destination);
+      getPolyPoints(sourceLocation, destination);
 
-    setState(() {});
+      setState(() {});
+    } else {
+      return;
+    }
   }
 
   getCurrentUserUid() async {
@@ -246,39 +252,43 @@ class _HomePageState extends State<HomePage> {
     return Scaffold(
       drawer: buildDrawer(),
       key: scaffoldState,
-      body: Column(
-        children: [
-          _currentLocation == null
-              ? const Center(
-                  child: CircularProgressIndicator(
-                    color: Colors.green,
+      body: SingleChildScrollView(
+        child: SizedBox(
+          height: Get.height,
+          width: Get.width,
+          child: Column(
+            children: [
+              _currentLocation == null
+                  ? const Center(
+                      child: CircularProgressIndicator(
+                        color: Colors.green,
+                      ),
+                    )
+                  : SizedBox(
+                      height: Get.height * .55,
+                      child: googleMap(),
+                    ),
+              Column(
+                children: [
+                  Container(
+                    height: Get.height * .25,
+                    decoration: const BoxDecoration(
+                      color: Colors.white,
+                    ),
+                    child: interactionSection(),
                   ),
-                )
-              : SizedBox(
-                  height: Get.height * .55,
-                  child: googleMap(),
-                ),
-          SingleChildScrollView(
-            child: Column(
-              children: [
-                Container(
-                  height: Get.height * .25,
-                  decoration: const BoxDecoration(
-                    color: Colors.white,
+                  Container(
+                    height: Get.height * .20,
+                    decoration: const BoxDecoration(
+                      color: Color(0xFFE7FFF4),
+                    ),
+                    child: informationDetails(),
                   ),
-                  child: interactionSection(),
-                ),
-                Container(
-                  height: Get.height * .20,
-                  decoration: const BoxDecoration(
-                    color: Color(0xFFE7FFF4),
-                  ),
-                  child: informationDetails(),
-                ),
-              ],
-            ),
-          )
-        ],
+                ],
+              )
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -607,7 +617,7 @@ class _HomePageState extends State<HomePage> {
                     const SizedBox(width: 10),
                     InkWell(
                       onTap: () {
-                        Get.to(() => const DriverFoundPage());
+                        Get.to(() => DriverFoundPage());
                       },
                       child: Text(
                         "${travelPrice?.toStringAsFixed(2) ?? "Price"} ",
@@ -630,13 +640,19 @@ class _HomePageState extends State<HomePage> {
             Expanded(
               child: ElevatedButton(
                 onPressed: () {
-                  String? token = notificationController.fcmToken;
-                  isBookClicked
-                      ? null
-                      : passengerController.storeBookingInfo(token);
-                  setState(() {
-                    isBookClicked = !isBookClicked;
-                  });
+                  if (sourceText == "" || destinationText == "") {
+                    Get.snackbar("Missing Input",
+                        "Please input the necessary informations",
+                        backgroundColor: Colors.red.shade200);
+                  } else {
+                    String? token = notificationController.fcmToken;
+                    isBookClicked
+                        ? null
+                        : passengerController.storeBookingInfo(token);
+                    setState(() {
+                      isBookClicked = !isBookClicked;
+                    });
+                  }
                 },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: isBookClicked ? Colors.white : Colors.green,

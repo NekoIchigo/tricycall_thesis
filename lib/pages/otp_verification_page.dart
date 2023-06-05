@@ -62,7 +62,7 @@ class _OtpVerificationPageState extends State<OtpVerificationPage> {
             ),
           ),
           Positioned(
-              bottom: Get.height * .15,
+              bottom: Get.height * .10,
               width: Get.width,
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,

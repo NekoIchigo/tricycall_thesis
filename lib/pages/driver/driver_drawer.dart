@@ -1,15 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:tricycall_thesis/controller/driver_controller.dart';
 import 'package:tricycall_thesis/pages/driver/performace_page.dart';
 import 'package:tricycall_thesis/pages/ride_history_page.dart';
 
 import '../../controller/auth_controller.dart';
-import '../../controller/passenger_controller.dart';
+import '../about_page.dart';
 import '../account_setting_page.dart';
+import '../settings_page.dart';
 
 AuthController authController = Get.find<AuthController>();
-PassengerController pasengerController = Get.find<PassengerController>();
+DriverController driverController = Get.find<DriverController>();
 
 Widget driverDrawer() {
   return Drawer(
@@ -28,24 +30,12 @@ Widget driverDrawer() {
                   child: Column(
                     children: [
                       ListTile(
-                        contentPadding: const EdgeInsets.all(0),
-                        leading: const Icon(
-                          Icons.wallet,
-                          color: Colors.green,
-                          size: 40,
-                        ),
-                        title: Text(
-                          "WALLET",
-                          style: GoogleFonts.varelaRound(
-                            color: Colors.green,
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                      ListTile(
                         onTap: () {
-                          Get.to(() => const RideHistory());
+                          // print("Driver ID: ${authController.userUID.value}");
+                          Get.to(() => RideHistory(
+                                userID: authController.userUID.value,
+                                userRole: "driver",
+                              ));
                         },
                         contentPadding: const EdgeInsets.all(0),
                         leading: const Icon(
@@ -64,7 +54,9 @@ Widget driverDrawer() {
                       ),
                       ListTile(
                         onTap: () {
-                          Get.to(() => const PerformancePage());
+                          Get.to(() => PerformancePage(
+                                userId: authController.userUID.value,
+                              ));
                         },
                         contentPadding: const EdgeInsets.all(0),
                         leading: const Icon(
@@ -82,6 +74,9 @@ Widget driverDrawer() {
                         ),
                       ),
                       ListTile(
+                        onTap: () {
+                          Get.to(() => const SettingsPage());
+                        },
                         contentPadding: const EdgeInsets.all(0),
                         leading: const Icon(
                           Icons.settings,
@@ -98,6 +93,9 @@ Widget driverDrawer() {
                         ),
                       ),
                       ListTile(
+                        onTap: () {
+                          Get.to(() => const AboutPage());
+                        },
                         contentPadding: const EdgeInsets.all(0),
                         leading: const Icon(
                           Icons.info_outline,
@@ -116,6 +114,8 @@ Widget driverDrawer() {
                       ListTile(
                         contentPadding: const EdgeInsets.all(0),
                         onTap: () {
+                          driverController.updateStatus(
+                              "offline", authController.userUID.value);
                           authController.signOut();
                         },
                         leading: const RotatedBox(
@@ -198,7 +198,7 @@ Widget driverDrawerHeader() {
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
                   border: Border.all(width: 2, color: Colors.green.shade900),
-                  image: pasengerController.myUser.value.image == null
+                  image: driverController.driverData.value.image == null
                       ? const DecorationImage(
                           image: AssetImage(
                             "assets/images/profile-placeholder.png",
@@ -207,7 +207,7 @@ Widget driverDrawerHeader() {
                         )
                       : DecorationImage(
                           image: NetworkImage(
-                              pasengerController.myUser.value.image!),
+                              driverController.driverData.value.image!),
                           fit: BoxFit.cover),
                 ),
               ),
@@ -215,7 +215,7 @@ Widget driverDrawerHeader() {
           ),
           const SizedBox(width: 20),
           Text(
-            pasengerController.myUser.value.firstName ?? "User",
+            driverController.driverData.value.firstName ?? "User",
             style: GoogleFonts.varelaRound(
               fontSize: 24,
               fontWeight: FontWeight.bold,

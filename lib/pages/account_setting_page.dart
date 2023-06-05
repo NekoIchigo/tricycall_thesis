@@ -6,8 +6,8 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:regexed_validator/regexed_validator.dart';
 
+import '../controller/auth_controller.dart';
 import '../controller/passenger_controller.dart';
-import '../widgets/green_button.dart';
 
 class AccountSettingPage extends StatefulWidget {
   const AccountSettingPage({super.key});
@@ -19,23 +19,33 @@ class AccountSettingPage extends StatefulWidget {
 class _AccountSettingPageState extends State<AccountSettingPage> {
   TextEditingController firstNameController = TextEditingController();
   TextEditingController lastNameController = TextEditingController();
-  TextEditingController homeController = TextEditingController();
-  TextEditingController workController = TextEditingController();
+  // TextEditingController homeController = TextEditingController();
+  // TextEditingController workController = TextEditingController();
   TextEditingController emailController = TextEditingController();
   TextEditingController emergencyEmailController = TextEditingController();
 
   GlobalKey<FormState> formKey = GlobalKey<FormState>();
 
   PassengerController pasengerController = Get.find<PassengerController>();
+  AuthController authController = Get.find<AuthController>();
 
   final ImagePicker _picker = ImagePicker();
   File? selectedImage;
+  File? discountImage;
   bool isEdit = false;
 
-  getImage(ImageSource source) async {
+  getProfileImage(ImageSource source) async {
     final XFile? image = await _picker.pickImage(source: source);
     if (image != null) {
       selectedImage = File(image.path);
+      setState(() {});
+    }
+  }
+
+  getIDImage(ImageSource source) async {
+    final XFile? image = await _picker.pickImage(source: source);
+    if (image != null) {
+      discountImage = File(image.path);
       setState(() {});
     }
   }
@@ -47,39 +57,41 @@ class _AccountSettingPageState extends State<AccountSettingPage> {
     lastNameController.text = pasengerController.myUser.value.lastName ?? "";
     emailController.text = pasengerController.myUser.value.email ?? "";
     emergencyEmailController.text =
-        pasengerController.myUser.value.emergencyEmail ?? "";
-    homeController.text = pasengerController.myUser.value.homeAddress ?? "";
-    workController.text = pasengerController.myUser.value.workAddress ?? "";
+        pasengerController.myUser.value.contactPerson ?? "";
+    // homeController.text = pasengerController.myUser.value.homeAddress ?? "";
+    // workController.text = pasengerController.myUser.value.workAddress ?? "";
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+        centerTitle: true,
         leading: IconButton(
           onPressed: () {
             Get.back();
           },
           icon: const Icon(Icons.arrow_back),
         ),
-        title: Center(
-          child: Text(
-            "USER PROFILE",
-            style: GoogleFonts.varelaRound(
-                fontSize: 16, fontWeight: FontWeight.bold),
-          ),
+        title: Text(
+          "USER PROFILE",
+          style: GoogleFonts.varelaRound(
+              fontSize: 16, fontWeight: FontWeight.bold),
         ),
         actions: [
-          Padding(
-            padding: const EdgeInsets.only(right: 20),
-            child: IconButton(
-              onPressed: () {
-                isEdit = !isEdit;
-                setState(() {});
-              },
-              icon: Icon(
-                isEdit ? Icons.edit_off : Icons.edit,
-                size: 30,
+          Visibility(
+            visible: authController.isRegistered.value,
+            child: Padding(
+              padding: const EdgeInsets.only(right: 20),
+              child: IconButton(
+                onPressed: () {
+                  isEdit = !isEdit;
+                  setState(() {});
+                },
+                icon: Icon(
+                  isEdit ? Icons.edit_off : Icons.edit,
+                  size: 30,
+                ),
               ),
             ),
           ),
@@ -103,17 +115,23 @@ class _AccountSettingPageState extends State<AccountSettingPage> {
                 ),
               ),
               Positioned(
-                bottom: Get.height * .05,
+                top: Get.height * .20,
                 child: inputSections(),
               ),
               Positioned(
-                bottom: Get.height * .68,
+                top: Get.height * .03,
                 child: getProfilePic(),
               ),
               Positioned(
                 top: Get.height * .80,
                 width: Get.width * .85,
-                child: bottomButton(),
+                child: Obx(
+                  () => pasengerController.isProfileUploading.value
+                      ? const Center(
+                          child: CircularProgressIndicator(),
+                        )
+                      : bottomButton(),
+                ),
               ),
             ],
           ),
@@ -164,9 +182,7 @@ class _AccountSettingPageState extends State<AccountSettingPage> {
                     ),
                   ],
                 ),
-                const SizedBox(
-                  height: 10,
-                ),
+                const SizedBox(height: 20),
                 underLinedInput(
                   emailController,
                   "Email",
@@ -176,14 +192,12 @@ class _AccountSettingPageState extends State<AccountSettingPage> {
                     if (input!.isEmpty) {
                       return "A Field is Empty!";
                     }
-                    if (validator.email(input)) {
+                    if (!validator.email(input)) {
                       return "Invalid Email";
                     }
                   },
                 ),
-                const SizedBox(
-                  height: 10,
-                ),
+                const SizedBox(height: 20),
                 underLinedInput(
                   emergencyEmailController,
                   "Emergency Email",
@@ -191,73 +205,121 @@ class _AccountSettingPageState extends State<AccountSettingPage> {
                   Get.width * .8,
                   (String? input) {
                     if (input!.isNotEmpty) {
-                      if (validator.email(input)) {
+                      if (!validator.email(input)) {
                         return "Invalid Email";
                       }
                     }
                   },
                 ),
-                const SizedBox(
-                  height: 10,
+                const SizedBox(height: 20),
+                Text(
+                  "Upload ID for Discount",
+                  style: GoogleFonts.varelaRound(
+                    fontSize: 14,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
-                underLinedInput(
-                  homeController,
-                  "Home Address(Optional)",
-                  "Tap here to select address",
-                  Get.width * .8,
-                  (String? input) {},
+                const SizedBox(height: 10),
+                Container(
+                  width: Get.width * .8,
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(
+                      color: Colors.grey,
+                      width: 1,
+                    ),
+                  ),
+                  child: InkWell(
+                    onTap: () {
+                      Get.defaultDialog(
+                        title: "Upload Image",
+                        titleStyle: GoogleFonts.varelaRound(
+                            color: Colors.green,
+                            fontSize: 24,
+                            fontWeight: FontWeight.bold),
+                        titlePadding: const EdgeInsets.all(20),
+                        content: Column(
+                          children: [
+                            SizedBox(
+                              width: Get.width * .50,
+                              child: OutlinedButton(
+                                style: OutlinedButton.styleFrom(
+                                  backgroundColor: Colors.green,
+                                ),
+                                onPressed: () {
+                                  getIDImage(ImageSource.camera);
+                                  Get.back();
+                                },
+                                child: Text(
+                                  "From Camera",
+                                  style: GoogleFonts.varelaRound(
+                                    color: Colors.white,
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ),
+                            ),
+                            SizedBox(
+                              width: Get.width * .50,
+                              child: OutlinedButton(
+                                style: OutlinedButton.styleFrom(
+                                  backgroundColor: Colors.green,
+                                ),
+                                onPressed: () {
+                                  getIDImage(ImageSource.gallery);
+                                  Get.back();
+                                },
+                                child: Text(
+                                  "From Files",
+                                  style: GoogleFonts.varelaRound(
+                                    color: Colors.white,
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                    },
+                    child: discountImage == null
+                        ? Text(
+                            "Senior, Student, PWD ID",
+                            style: GoogleFonts.varelaRound(
+                              fontSize: 14,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.grey.shade600,
+                            ),
+                          )
+                        : Image(
+                            image: FileImage(discountImage!),
+                          ),
+                  ),
                 ),
-                const SizedBox(
-                  height: 10,
-                ),
-                underLinedInput(
-                  workController,
-                  "Work Address(Optional)",
-                  "Tap here to select address",
-                  Get.width * .8,
-                  (String? input) {},
-                ),
-                const SizedBox(
-                  height: 20,
-                ),
+                // underLinedInput(
+                //   homeController,
+                //   "Home Address(Optional)",
+                //   "Tap here to select address",
+                //   Get.width * .8,
+                //   (String? input) {},
+                // ),
+                // const SizedBox(
+                //   height: 10,
+                // ),
+                // underLinedInput(
+                //   workController,
+                //   "Work Address(Optional)",
+                //   "Tap here to select address",
+                //   Get.width * .8,
+                //   (String? input) {},
+                // ),
+                const SizedBox(height: 20),
               ],
             ),
           ),
-        ),
-        Obx(
-          () => pasengerController.isProfileUploading.value
-              ? const Center(
-                  child: CircularProgressIndicator(),
-                )
-              : Align(
-                  alignment: Alignment.centerRight,
-                  child: Padding(
-                    padding: EdgeInsets.only(right: Get.width * .10),
-                    child: greenButton(
-                      "Next",
-                      () {
-                        if (!formKey.currentState!.validate()) {
-                          return;
-                        }
-                        if (selectedImage == null) {
-                          Get.snackbar("Image empty", "Please insert image");
-                        } else {
-                          pasengerController.isProfileUploading(true);
-                          pasengerController.storeUserInfo(
-                            selectedImage,
-                            firstNameController.text,
-                            lastNameController.text,
-                            emailController.text,
-                            emergencyEmailController.text,
-                            homeController.text,
-                            workController.text,
-                            url: pasengerController.myUser.value.image,
-                          );
-                        }
-                      },
-                    ),
-                  ),
-                ),
         ),
       ],
     );
@@ -317,7 +379,7 @@ class _AccountSettingPageState extends State<AccountSettingPage> {
                         backgroundColor: Colors.green,
                       ),
                       onPressed: () {
-                        getImage(ImageSource.camera);
+                        getProfileImage(ImageSource.camera);
                         Get.back();
                       },
                       child: Text(
@@ -337,7 +399,7 @@ class _AccountSettingPageState extends State<AccountSettingPage> {
                         backgroundColor: Colors.green,
                       ),
                       onPressed: () {
-                        getImage(ImageSource.gallery);
+                        getProfileImage(ImageSource.gallery);
                         Get.back();
                       },
                       child: Text(
@@ -415,7 +477,31 @@ class _AccountSettingPageState extends State<AccountSettingPage> {
 
   Widget bottomButton() {
     return ElevatedButton(
-      onPressed: () {},
+      onPressed: () {
+        if (!isEdit && authController.isRegistered.value) {
+          authController.signOut();
+        } else {
+          if (!formKey.currentState!.validate()) {
+            return;
+          }
+          if (selectedImage == null) {
+            Get.snackbar("Image empty", "Please insert image");
+          } else {
+            pasengerController.isProfileUploading(true);
+            pasengerController.storeUserInfo(
+              selectedImage,
+              discountImage,
+              firstNameController.text,
+              lastNameController.text,
+              // homeController.text,
+              // workController.text,
+              emailController.text,
+              emergencyEmailController.text,
+              url: pasengerController.myUser.value.image,
+            );
+          }
+        }
+      },
       style: ElevatedButton.styleFrom(
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(20),
@@ -423,7 +509,11 @@ class _AccountSettingPageState extends State<AccountSettingPage> {
         padding: const EdgeInsets.symmetric(vertical: 10),
       ),
       child: Text(
-        isEdit ? "SAVE" : "LOG OUT",
+        authController.isRegistered.value
+            ? isEdit
+                ? "SAVE"
+                : "LOG OUT"
+            : "REGISTER",
         style: GoogleFonts.varelaRound(
           fontSize: 16,
           fontWeight: FontWeight.bold,
