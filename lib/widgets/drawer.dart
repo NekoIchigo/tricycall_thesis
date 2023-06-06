@@ -19,7 +19,7 @@ Widget buildDrawer() {
         drawerHeader(),
         const SizedBox(height: 20),
         Positioned(
-          top: Get.height * .30,
+          top: 200,
           width: Get.width,
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -46,7 +46,7 @@ Widget buildDrawer() {
                         title: Text(
                           "RIDE HISTORY",
                           style: GoogleFonts.varelaRound(
-                            color: Colors.green,
+                            color: Colors.black,
                             fontSize: 16,
                             fontWeight: FontWeight.bold,
                           ),
@@ -65,7 +65,7 @@ Widget buildDrawer() {
                         title: Text(
                           "SETTINGS",
                           style: GoogleFonts.varelaRound(
-                            color: Colors.green,
+                            color: Colors.black,
                             fontSize: 16,
                             fontWeight: FontWeight.bold,
                           ),
@@ -84,7 +84,7 @@ Widget buildDrawer() {
                         title: Text(
                           "ABOUT",
                           style: GoogleFonts.varelaRound(
-                            color: Colors.green,
+                            color: Colors.black,
                             fontSize: 16,
                             fontWeight: FontWeight.bold,
                           ),
@@ -106,7 +106,7 @@ Widget buildDrawer() {
                         title: Text(
                           "LOGOUT",
                           style: GoogleFonts.varelaRound(
-                            color: Colors.green,
+                            color: Colors.black,
                             fontSize: 16,
                             fontWeight: FontWeight.bold,
                           ),
@@ -130,12 +130,6 @@ Widget buildDrawer() {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  "Footer Here",
-                  style: GoogleFonts.varelaRound(
-                    color: Colors.white,
-                  ),
-                ),
                 Text(
                   "Copy Right \u00a9 TricyCall Team",
                   style: GoogleFonts.varelaRound(

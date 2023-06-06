@@ -87,7 +87,7 @@ class _OtpVerificationPageState extends State<OtpVerificationPage> {
                     },
                     child: Countdown(
                       controller: _controller,
-                      seconds: 30,
+                      seconds: 120,
                       build: (BuildContext context, double time) {
                         return Text(
                             canResend ? "Tap here" : time.toStringAsFixed(0),

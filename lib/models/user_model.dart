@@ -10,17 +10,19 @@ class UserModel {
   String? contactPerson;
   String? image;
   String? phoneNumber;
+  String? discountImage;
 
   UserModel({
-    this.firstName,
-    this.lastName,
     // this.homeAddress,
     // this.workAddress,
+    this.firstName,
+    this.lastName,
     this.role,
     this.email,
     this.contactPerson,
     this.image,
     this.phoneNumber,
+    this.discountImage,
   });
 
   factory UserModel.fromJson(Map<String, dynamic> map) {
@@ -33,6 +35,7 @@ class UserModel {
       email: map['email'],
       contactPerson: map['contact_person'],
       image: map['image'],
+      discountImage: map['discount_image'],
       phoneNumber: map['phone_number'],
     );
   }
@@ -63,7 +66,7 @@ class DriverModel {
     this.licenseImage,
   });
 
-  factory DriverModel.fromMap(Map<String, dynamic> map) {
+  factory DriverModel.fromJson(Map<String, dynamic> map) {
     return DriverModel(
       firstName: map['first_name'],
       lastName: map['last_name'],
@@ -73,8 +76,8 @@ class DriverModel {
       bodyNumber: map['body_number'],
       role: map['role'],
       image: map['image'],
-      tricycleImage: map['tricycle_image'],
-      licenseImage: map['license_image'],
+      tricycleImage: map['tricycle_pic_url'],
+      licenseImage: map['license_url'],
     );
   }
 }

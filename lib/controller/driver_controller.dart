@@ -11,10 +11,10 @@ import 'package:get/get.dart';
 // ignore: depend_on_referenced_packages, library_prefixes
 import 'package:path/path.dart' as Path;
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:tricycall_thesis/pages/driver/driver_home_page.dart';
 import '../models/booking_model.dart';
 import '../models/user_model.dart';
 import '../pages/driver/verification_notice_page.dart';
-import '../pages/home_page.dart';
 
 class DriverController extends GetxController {
   var isProfileUploading = false.obs;
@@ -24,8 +24,8 @@ class DriverController extends GetxController {
   var bookingId = "".obs;
   var bookingInfo = BookingModel().obs;
   var chatId = "".obs;
-  var driverData = UserModel().obs;
-  var driverUid = "".obs;
+  var passengerData = UserModel().obs;
+  var driverData = DriverModel().obs;
 
   // User token
 
@@ -70,7 +70,7 @@ class DriverController extends GetxController {
     FirebaseFirestore.instance.collection('driver_application').doc().set({
       'first_name': firstName,
       'last_name': lastName,
-      'mobile_number': mobileNumber,
+      'phone_number': mobileNumber,
       'email': email,
       'operator_name': operatorName,
       'body_number': bodyNumber,
@@ -84,16 +84,62 @@ class DriverController extends GetxController {
     });
   }
 
-  var myUser = UserModel().obs;
+  getDriverData(userId) async {
+    DriverModel? userData;
+    var result =
+        await FirebaseFirestore.instance.collection("users").doc(userId).get();
+    if (result.exists) {
+      userData = DriverModel.fromJson(result.data()!);
+    } else {
+      Get.snackbar(
+        "Driver not found",
+        "No Driver found in provided ID",
+        backgroundColor: Colors.red.shade200,
+      );
+    }
+    return userData;
+  }
 
-  getDriverInfo() {
-    driverUid.value = FirebaseAuth.instance.currentUser!.uid;
-    FirebaseFirestore.instance
-        .collection('users')
-        .doc(driverUid.value)
-        .snapshots()
-        .listen((event) {
-      myUser.value = UserModel.fromJson(event.data()!);
+  storeDriverInfo(
+    File? selectedImage,
+    String firstName,
+    String lastName,
+    String email,
+    String operatorName,
+    String bodyNumber,
+    File? licenseFile,
+    File? tricycleFile, {
+    String? url = '',
+    String? urlLcs = '',
+    String? urlTrike = '',
+  }) async {
+    String licenseUrl = urlLcs ?? "",
+        tricycleUrl = urlTrike ?? "",
+        urlNew = url ?? "";
+    if (selectedImage != null) {
+      urlNew = await uploadImage(selectedImage, true);
+    }
+    if (licenseFile != null) {
+      licenseUrl = await uploadImage(licenseFile, true);
+    }
+    if (tricycleFile != null) {
+      tricycleUrl = await uploadImage(tricycleFile, false);
+    }
+    SharedPreferences localStorage = await SharedPreferences.getInstance();
+    String uid = localStorage.getString("user_uid")!;
+    FirebaseFirestore.instance.collection('users').doc(uid).set({
+      'image': urlNew,
+      'first_name': firstName,
+      'last_name': lastName,
+      'email': email,
+      'operator_name': operatorName,
+      'body_number': bodyNumber,
+      'license_url': licenseUrl,
+      'tricycle_pic_url': tricycleUrl,
+    }, SetOptions(merge: true)).then((value) {
+      isProfileUploading(false);
+
+      Get.to(() => const DriverHomePage());
     });
   }
 

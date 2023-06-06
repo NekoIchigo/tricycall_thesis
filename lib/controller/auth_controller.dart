@@ -3,6 +3,7 @@ import 'dart:developer';
 import 'dart:ui' as ui;
 
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:cloud_functions/cloud_functions.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
@@ -73,7 +74,7 @@ class AuthController extends GetxController {
         forceResendingToken: resendTokenId,
         verificationFailed: (FirebaseAuthException e) {
           log('Failed');
-          debugPrint("Error Code: ${e.code}");
+          log("Error Code: ${e.code}");
         },
         codeAutoRetrievalTimeout: (String verificationId) {},
       );
@@ -165,6 +166,33 @@ class AuthController extends GetxController {
     }
   }
 
+  // ------------------------------------------- CLOUD FUNCTIONS -------------------------------
+  // Create an instance of CloudFunctions
+  final cloudFunctions = FirebaseFunctions.instance;
+
+// Call the Cloud Function
+  Future<void> sendEmailNotification(String receiverEmail, String receiverName,
+      String userName, String location, double lat, double lng) async {
+    final dynamic data = {
+      'receiverEmail': receiverEmail,
+      'receiverName': receiverName,
+      'userName': userName,
+      'location': location,
+      'lat': lat,
+      'lng': lng,
+    };
+    log("Function Called");
+    try {
+      // Make the HTTP request to the Cloud Function
+      final HttpsCallable callable =
+          cloudFunctions.httpsCallable('sendEmailNotification');
+      await callable.call(data);
+      log('Email notification sent successfully');
+    } catch (error) {
+      log('Error sending email notification: $error');
+    }
+  }
+
   // ------------------------------------------- UNIVERSAL FUNCTIONS -------------------------------
   getCurrentUserUid() async {
     User? user = FirebaseAuth.instance.currentUser;
@@ -243,8 +271,7 @@ class AuthController extends GetxController {
       language: "en",
       context: context,
       mode: Mode.overlay,
-      apiKey:
-          "AIzaSyCbYWT5IPpryxcCqNmO_4EyFFCpIejPBf8", // AIzaSyCbYWT5IPpryxcCqNmO_4EyFFCpIejPBf8
+      apiKey: "AIzaSyCbYWT5IPpryxcCqNmO_4EyFFCpIejPBf8",
       components: [Component(Component.country, "ph")],
       types: [],
       hint: "Search City",

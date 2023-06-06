@@ -32,7 +32,7 @@ class _AccountSettingPageState extends State<AccountSettingPage> {
   final ImagePicker _picker = ImagePicker();
   File? selectedImage;
   File? discountImage;
-  bool isEdit = false;
+  bool isEdit = true;
 
   getProfileImage(ImageSource source) async {
     final XFile? image = await _picker.pickImage(source: source);
@@ -89,7 +89,7 @@ class _AccountSettingPageState extends State<AccountSettingPage> {
                   setState(() {});
                 },
                 icon: Icon(
-                  isEdit ? Icons.edit_off : Icons.edit,
+                  !isEdit ? Icons.edit_off : Icons.edit,
                   size: 30,
                 ),
               ),
@@ -157,6 +157,7 @@ class _AccountSettingPageState extends State<AccountSettingPage> {
                       "Name",
                       "First name",
                       Get.width * .4,
+                      isEdit,
                       (String? input) {
                         if (input!.isEmpty) {
                           return "A Field is Empty!";
@@ -171,6 +172,7 @@ class _AccountSettingPageState extends State<AccountSettingPage> {
                       "",
                       "Last name",
                       Get.width * .4,
+                      isEdit,
                       (String? input) {
                         if (input!.isEmpty) {
                           return "A Field is Empty!";
@@ -188,6 +190,7 @@ class _AccountSettingPageState extends State<AccountSettingPage> {
                   "Email",
                   "example@email.com",
                   Get.width * .8,
+                  isEdit,
                   (String? input) {
                     if (input!.isEmpty) {
                       return "A Field is Empty!";
@@ -200,9 +203,10 @@ class _AccountSettingPageState extends State<AccountSettingPage> {
                 const SizedBox(height: 20),
                 underLinedInput(
                   emergencyEmailController,
-                  "Emergency Email",
+                  "Contact Person",
                   "example@email.com",
                   Get.width * .8,
+                  isEdit,
                   (String? input) {
                     if (input!.isNotEmpty) {
                       if (!validator.email(input)) {
@@ -232,70 +236,89 @@ class _AccountSettingPageState extends State<AccountSettingPage> {
                   ),
                   child: InkWell(
                     onTap: () {
-                      Get.defaultDialog(
-                        title: "Upload Image",
-                        titleStyle: GoogleFonts.varelaRound(
-                            color: Colors.green,
-                            fontSize: 24,
-                            fontWeight: FontWeight.bold),
-                        titlePadding: const EdgeInsets.all(20),
-                        content: Column(
-                          children: [
-                            SizedBox(
-                              width: Get.width * .50,
-                              child: OutlinedButton(
-                                style: OutlinedButton.styleFrom(
-                                  backgroundColor: Colors.green,
-                                ),
-                                onPressed: () {
-                                  getIDImage(ImageSource.camera);
-                                  Get.back();
-                                },
-                                child: Text(
-                                  "From Camera",
-                                  style: GoogleFonts.varelaRound(
-                                    color: Colors.white,
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.bold,
+                      !isEdit
+                          ? Get.defaultDialog(
+                              title: "Upload Image",
+                              titleStyle: GoogleFonts.varelaRound(
+                                  color: Colors.green,
+                                  fontSize: 24,
+                                  fontWeight: FontWeight.bold),
+                              titlePadding: const EdgeInsets.all(20),
+                              content: Column(
+                                children: [
+                                  SizedBox(
+                                    width: Get.width * .50,
+                                    child: OutlinedButton(
+                                      style: OutlinedButton.styleFrom(
+                                        backgroundColor: Colors.green,
+                                      ),
+                                      onPressed: () {
+                                        getIDImage(ImageSource.camera);
+                                        Get.back();
+                                      },
+                                      child: Text(
+                                        "From Camera",
+                                        style: GoogleFonts.varelaRound(
+                                          color: Colors.white,
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                    ),
                                   ),
-                                ),
-                              ),
-                            ),
-                            SizedBox(
-                              width: Get.width * .50,
-                              child: OutlinedButton(
-                                style: OutlinedButton.styleFrom(
-                                  backgroundColor: Colors.green,
-                                ),
-                                onPressed: () {
-                                  getIDImage(ImageSource.gallery);
-                                  Get.back();
-                                },
-                                child: Text(
-                                  "From Files",
-                                  style: GoogleFonts.varelaRound(
-                                    color: Colors.white,
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.bold,
+                                  SizedBox(
+                                    width: Get.width * .50,
+                                    child: OutlinedButton(
+                                      style: OutlinedButton.styleFrom(
+                                        backgroundColor: Colors.green,
+                                      ),
+                                      onPressed: () {
+                                        getIDImage(ImageSource.gallery);
+                                        Get.back();
+                                      },
+                                      child: Text(
+                                        "From Files",
+                                        style: GoogleFonts.varelaRound(
+                                          color: Colors.white,
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                    ),
                                   ),
-                                ),
+                                ],
                               ),
-                            ),
-                          ],
-                        ),
-                      );
+                            )
+                          : null;
                     },
                     child: discountImage == null
-                        ? Text(
-                            "Senior, Student, PWD ID",
-                            style: GoogleFonts.varelaRound(
-                              fontSize: 14,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.grey.shade600,
+                        ? pasengerController.myUser.value.discountImage != null
+                            ? Container(
+                                height: 120,
+                                width: 120,
+                                decoration: BoxDecoration(
+                                  image: DecorationImage(
+                                    image: NetworkImage(pasengerController
+                                        .myUser.value.discountImage!),
+                                    fit: BoxFit.cover,
+                                  ),
+                                  color: Colors.grey.shade400,
+                                ),
+                              )
+                            : Text(
+                                "Senior, Student, PWD ID",
+                                style: GoogleFonts.varelaRound(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.grey.shade600,
+                                ),
+                              )
+                        : SizedBox(
+                            height: 120,
+                            width: 120,
+                            child: Image(
+                              image: FileImage(discountImage!),
                             ),
-                          )
-                        : Image(
-                            image: FileImage(discountImage!),
                           ),
                   ),
                 ),
@@ -330,6 +353,7 @@ class _AccountSettingPageState extends State<AccountSettingPage> {
     String title,
     String hint,
     double? width,
+    bool edit,
     Function validator,
   ) {
     return SizedBox(
@@ -343,6 +367,7 @@ class _AccountSettingPageState extends State<AccountSettingPage> {
                 fontSize: 16, fontWeight: FontWeight.bold),
           ),
           TextFormField(
+            readOnly: edit,
             controller: controller,
             decoration: InputDecoration(
               hintText: hint,
@@ -363,58 +388,60 @@ class _AccountSettingPageState extends State<AccountSettingPage> {
       children: [
         InkWell(
           onTap: () {
-            Get.defaultDialog(
-              title: "Upload Profile Picture",
-              titleStyle: GoogleFonts.varelaRound(
-                  color: Colors.green,
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold),
-              titlePadding: const EdgeInsets.all(20),
-              content: Column(
-                children: [
-                  SizedBox(
-                    width: Get.width * .50,
-                    child: OutlinedButton(
-                      style: OutlinedButton.styleFrom(
-                        backgroundColor: Colors.green,
-                      ),
-                      onPressed: () {
-                        getProfileImage(ImageSource.camera);
-                        Get.back();
-                      },
-                      child: Text(
-                        "From Camera",
-                        style: GoogleFonts.varelaRound(
-                          color: Colors.white,
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
+            !isEdit
+                ? Get.defaultDialog(
+                    title: "Upload Profile Picture",
+                    titleStyle: GoogleFonts.varelaRound(
+                        color: Colors.green,
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold),
+                    titlePadding: const EdgeInsets.all(20),
+                    content: Column(
+                      children: [
+                        SizedBox(
+                          width: Get.width * .50,
+                          child: OutlinedButton(
+                            style: OutlinedButton.styleFrom(
+                              backgroundColor: Colors.green,
+                            ),
+                            onPressed: () {
+                              getProfileImage(ImageSource.camera);
+                              Get.back();
+                            },
+                            child: Text(
+                              "From Camera",
+                              style: GoogleFonts.varelaRound(
+                                color: Colors.white,
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
                         ),
-                      ),
-                    ),
-                  ),
-                  SizedBox(
-                    width: Get.width * .50,
-                    child: OutlinedButton(
-                      style: OutlinedButton.styleFrom(
-                        backgroundColor: Colors.green,
-                      ),
-                      onPressed: () {
-                        getProfileImage(ImageSource.gallery);
-                        Get.back();
-                      },
-                      child: Text(
-                        "From Files",
-                        style: GoogleFonts.varelaRound(
-                          color: Colors.white,
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
+                        SizedBox(
+                          width: Get.width * .50,
+                          child: OutlinedButton(
+                            style: OutlinedButton.styleFrom(
+                              backgroundColor: Colors.green,
+                            ),
+                            onPressed: () {
+                              getProfileImage(ImageSource.gallery);
+                              Get.back();
+                            },
+                            child: Text(
+                              "From Files",
+                              style: GoogleFonts.varelaRound(
+                                color: Colors.white,
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
                         ),
-                      ),
+                      ],
                     ),
-                  ),
-                ],
-              ),
-            );
+                  )
+                : null;
           },
           child: Container(
             margin: const EdgeInsets.all(3),
@@ -478,14 +505,31 @@ class _AccountSettingPageState extends State<AccountSettingPage> {
   Widget bottomButton() {
     return ElevatedButton(
       onPressed: () {
-        if (!isEdit && authController.isRegistered.value) {
+        print(authController.isRegistered.value);
+        if (isEdit && authController.isRegistered.value) {
           authController.signOut();
         } else {
           if (!formKey.currentState!.validate()) {
             return;
           }
-          if (selectedImage == null) {
-            Get.snackbar("Image empty", "Please insert image");
+          if (!authController.isRegistered.value) {
+            if (selectedImage == null || discountImage == null) {
+              Get.snackbar("Image empty", "Please insert image");
+            } else {
+              pasengerController.isProfileUploading(true);
+              pasengerController.storeUserInfo(
+                selectedImage,
+                discountImage,
+                firstNameController.text,
+                lastNameController.text,
+                // homeController.text,
+                // workController.text,
+                emailController.text,
+                emergencyEmailController.text,
+                url: pasengerController.myUser.value.image,
+                discountUrl: pasengerController.myUser.value.discountImage,
+              );
+            }
           } else {
             pasengerController.isProfileUploading(true);
             pasengerController.storeUserInfo(
@@ -498,6 +542,7 @@ class _AccountSettingPageState extends State<AccountSettingPage> {
               emailController.text,
               emergencyEmailController.text,
               url: pasengerController.myUser.value.image,
+              discountUrl: pasengerController.myUser.value.discountImage,
             );
           }
         }
@@ -510,7 +555,7 @@ class _AccountSettingPageState extends State<AccountSettingPage> {
       ),
       child: Text(
         authController.isRegistered.value
-            ? isEdit
+            ? !isEdit
                 ? "SAVE"
                 : "LOG OUT"
             : "REGISTER",

@@ -30,6 +30,7 @@ Future<void> main() async {
   //   Get.snackbar("Permission not Accepted",
   //       "Grant notification permission to receive notifications");
   // }
+
   runApp(const MyApp());
 }
 

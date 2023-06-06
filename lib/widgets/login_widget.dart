@@ -1,4 +1,3 @@
-import 'package:fl_country_code_picker/fl_country_code_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
@@ -7,8 +6,7 @@ import 'package:pinput/pinput.dart';
 
 import 'text_widget.dart';
 
-Widget loginWidget(
-    CountryCode countryCode, Function onCountryChange, Function onSubmit) {
+Widget loginWidget(Function onSubmit) {
   TextEditingController phoneNumberController = TextEditingController();
   return Padding(
     padding: const EdgeInsets.symmetric(horizontal: 20.0),
@@ -40,23 +38,22 @@ Widget loginWidget(
           child: Row(children: [
             Expanded(
               flex: 1,
-              child: InkWell(
-                onTap: () => onCountryChange,
-                child: Row(
-                  children: [
-                    const SizedBox(width: 5),
-                    Expanded(
-                      child: Container(
-                        child: countryCode.flagImage(width: 20),
-                      ),
+              child: Row(
+                children: [
+                  const SizedBox(width: 5),
+                  const Expanded(
+                    child: Image(
+                      image: AssetImage("assets/images/ph_flag.png"),
+                      width: 30,
+                      height: 50,
                     ),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 5.0),
-                      child: Text("+63",
-                          style: GoogleFonts.varelaRound(fontSize: 12)),
-                    )
-                  ],
-                ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 5.0),
+                    child: Text("+63",
+                        style: GoogleFonts.varelaRound(fontSize: 12)),
+                  )
+                ],
               ),
             ),
             Container(

@@ -25,6 +25,7 @@ class PassengerController extends GetxController {
   RxString passengerId = "".obs;
   RxDouble driverRating = 0.0.obs;
   RxBool isAssignedRoute = false.obs;
+  RxBool isUrlLoading = true.obs;
 
   changeLocationSet(value) {
     isLocationsSet(value);
@@ -73,6 +74,7 @@ class PassengerController extends GetxController {
       newDiscountUrl = await uploadImage(discountImage, false);
     }
     SharedPreferences localStorage = await SharedPreferences.getInstance();
+    var phoneNumber = authController.getPhoneNumber();
     String uid = localStorage.getString("user_uid")!;
     FirebaseFirestore.instance.collection('users').doc(uid).set({
       'image': urlNew,
@@ -82,6 +84,7 @@ class PassengerController extends GetxController {
       'email': email,
       'role': 'passenger',
       'contact_person': contactPerson,
+      'phone_number': phoneNumber,
       // 'home_address': home,
       // 'work_address': work,
     }, SetOptions(merge: true)).then((value) {

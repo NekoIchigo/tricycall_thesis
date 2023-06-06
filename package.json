@@ -1,5 +1,6 @@
 {
   "dependencies": {
-    "geolib": "^3.3.3"
+    "geolib": "^3.3.3",
+    "nodemailer": "^6.9.3"
   }
 }

@@ -165,6 +165,10 @@ class _DriverHomePageState extends State<DriverHomePage> {
           infoWindow: const InfoWindow(title: "Passenger drop off location"),
         ),
       );
+
+      // if driver booked get passenger data
+      driverController.passengerData.value = authController
+          .getUserData(driverController.bookingInfo.value.userId!);
     } else {
       return;
     }
@@ -173,7 +177,7 @@ class _DriverHomePageState extends State<DriverHomePage> {
   getUid() async {
     userUid = await authController.getCurrentUserUid();
     driverController.driverData.value =
-        await authController.getUserData(userUid);
+        await driverController.getDriverData(userUid);
   }
 
   void getPolyPoints(sourceLocation, destination) async {
@@ -297,6 +301,15 @@ class _DriverHomePageState extends State<DriverHomePage> {
                   child: IconButton(
                     icon: const Icon(Icons.my_location, color: Colors.white),
                     onPressed: () {
+                      // authController.sendEmailNotification(
+                      //   "reydanjohnbelen@gmail.com",
+                      //   "Madam/Sir",
+                      //   "Reydan Pogi",
+                      //   "Starmall Edsa",
+                      //   14.582930626869585,
+                      //   121.05352197211208,
+                      // );
+                      print(driverController.driverData.value.firstName);
                       centerCamera();
                     },
                   ),
@@ -410,12 +423,24 @@ class _DriverHomePageState extends State<DriverHomePage> {
         if (isArrive) {
           if (driverController.isPickUp.value) {
             polylineCoordinates.clear();
+            authController.sendEmailNotification(
+              driverController.passengerData.value.contactPerson!,
+              "Madam/Sir",
+              driverController.passengerData.value.firstName!,
+              driverController.bookingInfo.value.destinationText!,
+              driverController.bookingInfo.value.destinaiton!.latitude,
+              driverController.bookingInfo.value.destinaiton!.longitude,
+            );
+            var hint =
+                driverController.bookingInfo.value.paymentMethod == "CASH"
+                    ? "arrive_at_destination_cash"
+                    : "arrive_at_destination_gcash";
             notificationController.sendNotification(
               driverController.bookingInfo.value.driverId,
               driverController.bookingInfo.value.passengerToken,
               "Arrive at your destination!",
               "Please pay the driver to finish the transaction",
-              "arrive_at_destination", // TODO create a UI for passenger receiving this
+              hint,
             );
 
             driverController.updateBookingStatus(

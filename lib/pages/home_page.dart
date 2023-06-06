@@ -1,7 +1,9 @@
 import 'dart:async';
+import 'dart:developer';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import 'package:flutter_polyline_points/flutter_polyline_points.dart';
 import 'package:loading_animation_widget/loading_animation_widget.dart';
@@ -9,8 +11,12 @@ import 'package:geolocator/geolocator.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:paymongo_sdk/paymongo_sdk.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:timer_count_down/timer_controller.dart';
+import 'package:timer_count_down/timer_count_down.dart';
 import 'package:tricycall_thesis/pages/select_locations_page.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../controller/auth_controller.dart';
 import '../controller/notification_controller.dart';
@@ -19,6 +25,7 @@ import '../models/tariff_calculator.dart';
 import '../widgets/drawer.dart';
 import 'package:group_radio_button/group_radio_button.dart';
 
+import '../widgets/webview.dart';
 import 'driver_found_page.dart';
 
 class HomePage extends StatefulWidget {
@@ -39,6 +46,10 @@ class _HomePageState extends State<HomePage> {
       Get.find<NotificationController>();
 
   String paymentMethod = "CASH";
+
+  bool canCancel = true;
+  final CountdownController _controllerTimer =
+      CountdownController(autoStart: true);
 
   GlobalKey<ScaffoldState> scaffoldState = GlobalKey<ScaffoldState>();
 
@@ -235,6 +246,15 @@ class _HomePageState extends State<HomePage> {
       }
     });
   }
+
+  // final Uri _url =
+  //     Uri.parse('https://pm.link/org-FSjssrznvGpyUWue7JPNkB1g/test/EqQ3Wh4');
+
+  // Future<void> _launchUrl() async {
+  //   if (!await launchUrl(_url)) {
+  //     throw Exception('Could not launch $_url');
+  //   }
+  // }
 
   @override
   initState() {
@@ -617,7 +637,12 @@ class _HomePageState extends State<HomePage> {
                     const SizedBox(width: 10),
                     InkWell(
                       onTap: () {
-                        Get.to(() => DriverFoundPage());
+                        log("Paymongo Called");
+                        // _launchUrl();
+                        Get.to(() => const WebViewScreen(
+                              url:
+                                  'https://pm.link/org-FSjssrznvGpyUWue7JPNkB1g/test/EqQ3Wh4',
+                            ));
                       },
                       child: Text(
                         "${travelPrice?.toStringAsFixed(2) ?? "Price"} ",
@@ -627,6 +652,13 @@ class _HomePageState extends State<HomePage> {
                         ),
                       ),
                     ),
+                    // TextButton(  // * Important this code close the app
+                    //   onPressed: () {
+                    //     SystemChannels.platform
+                    //         .invokeMethod('SystemNavigator.pop');
+                    //   },
+                    //   child: Text('Back'),
+                    // ),
                   ],
                 ),
               ),
@@ -645,13 +677,19 @@ class _HomePageState extends State<HomePage> {
                         "Please input the necessary informations",
                         backgroundColor: Colors.red.shade200);
                   } else {
-                    String? token = notificationController.fcmToken;
-                    isBookClicked
-                        ? null
-                        : passengerController.storeBookingInfo(token);
-                    setState(() {
-                      isBookClicked = !isBookClicked;
-                    });
+                    if (canCancel) {
+                      if (isBookClicked) {
+                        _controllerTimer.onRestart;
+                        _controllerTimer.onPause;
+                        log("timer restrat stop");
+                      } else {
+                        _controllerTimer.onStart;
+                        log("timer start");
+                      }
+                      setState(() {
+                        isBookClicked = !isBookClicked;
+                      });
+                    }
                   }
                 },
                 style: ElevatedButton.styleFrom(
@@ -669,7 +707,7 @@ class _HomePageState extends State<HomePage> {
                         children: [
                           const Expanded(child: SizedBox()),
                           Text(
-                            "Cancel",
+                            canCancel ? "Waiting" : "Cancel",
                             style: GoogleFonts.varelaRound(
                               fontSize: 20,
                               fontWeight: FontWeight.bold,
@@ -679,13 +717,26 @@ class _HomePageState extends State<HomePage> {
                           SizedBox(width: Get.width * .22),
                           CircleAvatar(
                             backgroundColor: Colors.green,
-                            child: Text(
-                              "60",
-                              style: GoogleFonts.varelaRound(
-                                fontSize: 20,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.black,
-                              ),
+                            child: Countdown(
+                              controller: _controllerTimer,
+                              seconds: 30,
+                              build: (BuildContext context, double time) {
+                                return Text(time.toStringAsFixed(0),
+                                    style: GoogleFonts.varelaRound(
+                                      fontSize: 20,
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.black,
+                                    ));
+                              },
+                              interval: const Duration(seconds: 1),
+                              onFinished: () {
+                                log("timer done");
+                                String? token = notificationController.fcmToken;
+                                passengerController.storeBookingInfo(token);
+                                setState(() {
+                                  canCancel = false; //TODO add function here
+                                });
+                              },
                             ),
                           ),
                           const SizedBox(width: 10),

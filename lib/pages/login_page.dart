@@ -1,4 +1,3 @@
-import 'package:fl_country_code_picker/fl_country_code_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -16,14 +15,9 @@ class LoginPage extends StatefulWidget {
 }
 
 class _LoginPageState extends State<LoginPage> {
-  final countryPicker = const FlCountryCodePicker();
-
-  CountryCode countryCode =
-      const CountryCode(name: "Philippines", code: "PH", dialCode: "+63");
-
   onSubmit(String? input) {
     Get.to(() => OtpVerificationPage(
-          phoneNumber: countryCode.dialCode + input!,
+          phoneNumber: "+63${input!}",
         ));
   }
 
@@ -36,12 +30,7 @@ class _LoginPageState extends State<LoginPage> {
             width: Get.width,
             bottom: 0,
             child: bottomGreen(
-              loginWidget(countryCode, () async {
-                final code = await countryPicker.showPicker(context: context);
-                // Null check
-                if (code != null) countryCode = code;
-                setState(() {});
-              }, onSubmit),
+              loginWidget(onSubmit),
             ),
           ),
           Positioned(

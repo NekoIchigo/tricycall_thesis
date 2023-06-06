@@ -7,7 +7,7 @@ import 'package:tricycall_thesis/pages/ride_history_page.dart';
 
 import '../../controller/auth_controller.dart';
 import '../about_page.dart';
-import '../account_setting_page.dart';
+import 'driver_account_setting.dart';
 import '../settings_page.dart';
 
 AuthController authController = Get.find<AuthController>();
@@ -20,7 +20,7 @@ Widget driverDrawer() {
         driverDrawerHeader(),
         const SizedBox(height: 20),
         Positioned(
-          top: Get.height * .30,
+          top: 200,
           width: Get.width,
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -31,7 +31,7 @@ Widget driverDrawer() {
                     children: [
                       ListTile(
                         onTap: () {
-                          // print("Driver ID: ${authController.userUID.value}");
+                          print("Driver ID: ${authController.userUID.value}");
                           Get.to(() => RideHistory(
                                 userID: authController.userUID.value,
                                 userRole: "driver",
@@ -46,7 +46,7 @@ Widget driverDrawer() {
                         title: Text(
                           "RIDE HISTORY",
                           style: GoogleFonts.varelaRound(
-                            color: Colors.green,
+                            color: Colors.black,
                             fontSize: 16,
                             fontWeight: FontWeight.bold,
                           ),
@@ -67,7 +67,7 @@ Widget driverDrawer() {
                         title: Text(
                           "PERFORMANCE",
                           style: GoogleFonts.varelaRound(
-                            color: Colors.green,
+                            color: Colors.black,
                             fontSize: 16,
                             fontWeight: FontWeight.bold,
                           ),
@@ -86,7 +86,7 @@ Widget driverDrawer() {
                         title: Text(
                           "SETTINGS",
                           style: GoogleFonts.varelaRound(
-                            color: Colors.green,
+                            color: Colors.black,
                             fontSize: 16,
                             fontWeight: FontWeight.bold,
                           ),
@@ -105,7 +105,7 @@ Widget driverDrawer() {
                         title: Text(
                           "ABOUT",
                           style: GoogleFonts.varelaRound(
-                            color: Colors.green,
+                            color: Colors.black,
                             fontSize: 16,
                             fontWeight: FontWeight.bold,
                           ),
@@ -129,7 +129,7 @@ Widget driverDrawer() {
                         title: Text(
                           "LOGOUT",
                           style: GoogleFonts.varelaRound(
-                            color: Colors.green,
+                            color: Colors.black,
                             fontSize: 16,
                             fontWeight: FontWeight.bold,
                           ),
@@ -153,12 +153,6 @@ Widget driverDrawer() {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  "Footer Here",
-                  style: GoogleFonts.varelaRound(
-                    color: Colors.white,
-                  ),
-                ),
                 Text(
                   "Copy Right \u00a9 TricyCall Team",
                   style: GoogleFonts.varelaRound(
@@ -188,7 +182,7 @@ Widget driverDrawerHeader() {
         children: [
           InkWell(
             onTap: () {
-              Get.to(() => const AccountSettingPage());
+              Get.to(() => const DriverAccountSettingPage());
             },
             child: CircleAvatar(
               backgroundColor: Colors.white,

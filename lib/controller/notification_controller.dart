@@ -9,6 +9,7 @@ import 'package:tricycall_thesis/pages/driver_found_page.dart';
 import 'package:tricycall_thesis/pages/home_page.dart';
 
 import '../pages/driver/booking_found_page.dart';
+import '../widgets/webview.dart';
 
 class NotificationController extends GetxController {
   // <---------------------------------- Handles Receiving of notification
@@ -103,7 +104,13 @@ class NotificationController extends GetxController {
       } else if (user == "passenger") {
         var driverID = data['driverId'];
         hint(data['hint']);
-        if (data['hint'] == "arrive_at_destination") {
+        if (data['hint'] == "arrive_at_destination_gcash") {
+          Get.to(() => const WebViewScreen(
+                url:
+                    'https://pm.link/org-FSjssrznvGpyUWue7JPNkB1g/test/EqQ3Wh4',
+              ));
+          ratingDialog();
+        } else if (data['hint'] == "arrive_at_destination_cash") {
           ratingDialog();
         } else if (data['hint'] == "transaction_complete") {
           Get.to(() => const HomePage());

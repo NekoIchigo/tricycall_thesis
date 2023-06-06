@@ -1,5 +1,6 @@
 import * as functions from "firebase-functions";
 import * as admin from "firebase-admin";
+import * as nodemailer from "nodemailer";
 
 admin.initializeApp();
 
@@ -180,3 +181,129 @@ exports.driverResponse = functions.https.onCall(async (data, context) => {
       .HttpsError("internal", "Error sending driver response");
   }
 });
+
+// Cloud Function to send an email with the provided template
+export const sendEmailNotification = functions
+  .https
+  .onCall(async (data, context) => {
+    const {receiverEmail, receiverName, userName, location, lat, lng} = data;
+    console.log("ReceiverEmail: " + receiverEmail);
+    console.log("receiverName: " + receiverName);
+    console.log("userName: " + userName);
+    console.log("location: " + location);
+    console.log("lat: " + lat + "lng: " + lng);
+    // Create a Nodemailer transporter
+    const transporter = nodemailer.createTransport({
+      service: "Gmail",
+      auth: {
+        user: functions.config().gmail.email,
+        pass: functions.config().gmail.password,
+      },
+    });
+
+    // Create the email template
+    const emailTemplate = `
+    <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="UTF-8">
+        <title>Booking Arrival Notification</title>
+        <link href='https://fonts.googleapis.com/css?family=Nunito' rel='stylesheet'>
+        <style>
+          body {
+            font-family: 'Nunito';
+            text-align: center;
+            margin: 0;
+            padding: 20px;
+            background-image: url('https://firebasestorage.googleapis.com/v0/b/tricycallthesis.appspot.com/o/hero-bg.jpg?alt=media&token=72f121ec-7557-48ac-9985-c017c4be7736&_gl=1*1r7595k*_ga*MTI1NjEyNTMzNy4xNjgzMDEwMDM5*_ga_CW55HF8NVT*MTY4NTk3MjU2NC4xMTEuMS4xNjg1OTc0MDU5LjAuMC4w');
+            background-size: cover;
+            background-repeat: no-repeat;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+          }
+
+          .content {
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 10px;
+            display: inline-block;
+            max-width: 90%;
+            box-shadow: 0px 0px 10px rgba(0, 0, 0, 1); /* Add box shadow */
+          }
+          
+          h1 {
+            color: #000000;
+          }
+          
+          p {
+            color: #333;
+            line-height: 1.5;
+          }
+          
+          img.logo {
+            width: 100px;
+          }
+          
+          img.map {
+            width: 450px; /* Adjust the width as needed */
+            max-height: auto; /* Adjust the height as needed */
+            margin: 20px 0;
+            box-shadow: 0px 0px 20px rgba(0, 0, 0, 0.5); /* Add box shadow */
+          }
+
+          @media only screen and (min-width: 768px) {
+            .content {
+              max-width: 80%;
+            }
+            
+            h1 {
+              font-size: 28px;
+            }
+            
+            p {
+              font-size: 18px;
+            }
+          }
+        </style>
+      </head>
+      <body>
+        <div class="content">
+          
+          <h1>Booking Arrival Notification</h1>
+          <p>Dear ${receiverName},</p>
+          <p>We are pleased to inform you that ${userName}
+           has successfully arrived at the destination.</p>
+          <p>Location: ${location}</p>
+          <img class="map" src="https://maps.googleapis.com/maps/api/staticmap?center=${lat},${lng}&zoom=15&size=400x300&markers=color:red%7C${lat},${lng}&key=AIzaSyCbYWT5IPpryxcCqNmO_4EyFFCpIejPBf8" alt="Map" />
+          <p>Thank you for using our service.</p>
+          <p>Sincerely,</p>
+          <img class="logo" src="https://firebasestorage.googleapis.com/v0/b/tricycallthesis.appspot.com/o/logo.png?alt=media&token=7ebe7bfc-83fa-49b0-994d-8d40cbb7d444&_gl=1*miw374*_ga*MTI1NjEyNTMzNy4xNjgzMDEwMDM5*_ga_CW55HF8NVT*MTY4NTk3MjU2NC4xMTEuMS4xNjg1OTc0MTQzLjAuMC4w" alt="Logo">
+        </div>
+      </body>
+      </html>
+  `;
+
+    // Define the email options
+    const mailOptions = {
+      from: "tricycall123456@gmail.com",
+      to: receiverEmail,
+      subject: "Booking Arrival Notification",
+      html: emailTemplate,
+    };
+
+    try {
+    // Send the email
+      await transporter.sendMail(mailOptions);
+      return {success: true};
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        console.error("Error sending email:", error);
+        return {success: false, error: error.message};
+      } else {
+        console.error("Unknown error:", error);
+        return {success: false, error: "Unknown error occurred."};
+      }
+    }
+  });

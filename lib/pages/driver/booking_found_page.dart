@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:developer';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
@@ -9,6 +10,8 @@ import 'package:geolocator/geolocator.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:timer_count_down/timer_controller.dart';
+import 'package:timer_count_down/timer_count_down.dart';
 import 'package:tricycall_thesis/controller/driver_controller.dart';
 
 import '../../controller/auth_controller.dart';
@@ -34,6 +37,9 @@ class _BookFoundPageState extends State<BookFoundPage> {
 
   GlobalKey<ScaffoldState> scaffoldState = GlobalKey<ScaffoldState>();
   Position? _currentLocation;
+
+  final CountdownController _controllerTimer =
+      CountdownController(autoStart: true);
 
   List<LatLng> polylineCoordinates = [];
   Set<Marker> markers = <Marker>{};
@@ -324,6 +330,7 @@ class _BookFoundPageState extends State<BookFoundPage> {
                   titlePadding: const EdgeInsets.symmetric(vertical: 20),
                   contentPadding: const EdgeInsets.symmetric(horizontal: 20),
                   content: Container(
+                    padding: const EdgeInsets.all(10.0),
                     height: Get.height * .1,
                     width: Get.width,
                     decoration: BoxDecoration(
@@ -336,8 +343,6 @@ class _BookFoundPageState extends State<BookFoundPage> {
                       driverController.bookingInfo.value.notes ?? "",
                       style: GoogleFonts.varelaRound(
                         fontSize: 14,
-                        color: Colors.green,
-                        fontWeight: FontWeight.bold,
                       ),
                     ),
                   ),
@@ -429,17 +434,34 @@ class _BookFoundPageState extends State<BookFoundPage> {
                 ),
                 const Expanded(child: SizedBox()),
                 CircleAvatar(
-                  radius: 12,
-                  backgroundColor: Colors.green,
-                  child: Text(
-                    "60",
-                    style: GoogleFonts.varelaRound(
-                      fontSize: 12,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.black,
-                    ),
-                  ),
-                ),
+                    radius: 12,
+                    backgroundColor: Colors.green,
+                    child: Countdown(
+                      controller: _controllerTimer,
+                      seconds: 60,
+                      build: (BuildContext context, double time) {
+                        return Text(time.toStringAsFixed(0),
+                            style: GoogleFonts.varelaRound(
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.black,
+                            ));
+                      },
+                      interval: const Duration(seconds: 1),
+                      onFinished: () {
+                        log("timer done");
+                        driverController.sendDriverResponse(
+                          driverController.bookingInfo.value.driverId!,
+                          driverController.bookingId.value,
+                          "declined",
+                        );
+                        driverController.isDriverBooked.value = false;
+                        Get.to(() => const DriverHomePage());
+                        setState(() {
+                          //TODO add function here
+                        });
+                      },
+                    )),
               ],
             ),
           ),
