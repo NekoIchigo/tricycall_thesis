@@ -3,7 +3,6 @@ import 'dart:developer';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 
 import 'package:flutter_polyline_points/flutter_polyline_points.dart';
 import 'package:geolocator/geolocator.dart';
@@ -393,6 +392,7 @@ class _BookFoundPageState extends State<BookFoundPage> {
             onPressed: () async {
               isLoading = true;
               try {
+                driverController.isDriverBooked.value = true;
                 await notificationController.sendNotification(
                   driverController.bookingInfo.value.driverId,
                   driverController.bookingInfo.value.passengerToken,
@@ -406,7 +406,6 @@ class _BookFoundPageState extends State<BookFoundPage> {
                 );
                 driverController.initChatCollection();
                 isLoading = false;
-                driverController.isDriverBooked.value = true;
                 Get.to(() => const DriverHomePage());
               } catch (error) {
                 isLoading = false;
@@ -449,17 +448,17 @@ class _BookFoundPageState extends State<BookFoundPage> {
                       },
                       interval: const Duration(seconds: 1),
                       onFinished: () {
-                        log("timer done");
+                        if (driverController.isDriverBooked.value) {
+                          return;
+                        }
+                        log("timer done declined");
                         driverController.sendDriverResponse(
                           driverController.bookingInfo.value.driverId!,
                           driverController.bookingId.value,
                           "declined",
                         );
-                        driverController.isDriverBooked.value = false;
                         Get.to(() => const DriverHomePage());
-                        setState(() {
-                          //TODO add function here
-                        });
+                        setState(() {});
                       },
                     )),
               ],
@@ -477,7 +476,6 @@ class _BookFoundPageState extends State<BookFoundPage> {
                 driverController.bookingId.value,
                 "declined",
               );
-              driverController.isDriverBooked.value = false;
               Get.to(() => const DriverHomePage());
             },
             style: OutlinedButton.styleFrom(

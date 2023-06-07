@@ -157,7 +157,8 @@ class _SelectLocationsState extends State<SelectLocations> {
                               Get.to(() => const HomePage());
                             } else {
                               Get.snackbar("Missing input",
-                                  "Please first fill up the pick up location");
+                                  "Please first fill up the pick up location",
+                                  backgroundColor: Colors.red.shade200);
                             }
                           },
                           controller: dropOffLocation,

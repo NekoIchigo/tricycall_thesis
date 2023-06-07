@@ -157,7 +157,7 @@ class _AccountSettingPageState extends State<AccountSettingPage> {
                       "Name",
                       "First name",
                       Get.width * .4,
-                      isEdit,
+                      !authController.isRegistered.value ? false : isEdit,
                       (String? input) {
                         if (input!.isEmpty) {
                           return "A Field is Empty!";
@@ -172,7 +172,7 @@ class _AccountSettingPageState extends State<AccountSettingPage> {
                       "",
                       "Last name",
                       Get.width * .4,
-                      isEdit,
+                      !authController.isRegistered.value ? false : isEdit,
                       (String? input) {
                         if (input!.isEmpty) {
                           return "A Field is Empty!";
@@ -190,7 +190,7 @@ class _AccountSettingPageState extends State<AccountSettingPage> {
                   "Email",
                   "example@email.com",
                   Get.width * .8,
-                  isEdit,
+                  !authController.isRegistered.value ? false : isEdit,
                   (String? input) {
                     if (input!.isEmpty) {
                       return "A Field is Empty!";
@@ -206,7 +206,7 @@ class _AccountSettingPageState extends State<AccountSettingPage> {
                   "Contact Person",
                   "example@email.com",
                   Get.width * .8,
-                  isEdit,
+                  !authController.isRegistered.value ? false : isEdit,
                   (String? input) {
                     if (input!.isNotEmpty) {
                       if (!validator.email(input)) {
@@ -236,7 +236,7 @@ class _AccountSettingPageState extends State<AccountSettingPage> {
                   ),
                   child: InkWell(
                     onTap: () {
-                      !isEdit
+                      !authController.isRegistered.value
                           ? Get.defaultDialog(
                               title: "Upload Image",
                               titleStyle: GoogleFonts.varelaRound(
@@ -289,7 +289,60 @@ class _AccountSettingPageState extends State<AccountSettingPage> {
                                 ],
                               ),
                             )
-                          : null;
+                          : !isEdit
+                              ? Get.defaultDialog(
+                                  title: "Upload Image",
+                                  titleStyle: GoogleFonts.varelaRound(
+                                      color: Colors.green,
+                                      fontSize: 24,
+                                      fontWeight: FontWeight.bold),
+                                  titlePadding: const EdgeInsets.all(20),
+                                  content: Column(
+                                    children: [
+                                      SizedBox(
+                                        width: Get.width * .50,
+                                        child: OutlinedButton(
+                                          style: OutlinedButton.styleFrom(
+                                            backgroundColor: Colors.green,
+                                          ),
+                                          onPressed: () {
+                                            getIDImage(ImageSource.camera);
+                                            Get.back();
+                                          },
+                                          child: Text(
+                                            "From Camera",
+                                            style: GoogleFonts.varelaRound(
+                                              color: Colors.white,
+                                              fontSize: 16,
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                      SizedBox(
+                                        width: Get.width * .50,
+                                        child: OutlinedButton(
+                                          style: OutlinedButton.styleFrom(
+                                            backgroundColor: Colors.green,
+                                          ),
+                                          onPressed: () {
+                                            getIDImage(ImageSource.gallery);
+                                            Get.back();
+                                          },
+                                          child: Text(
+                                            "From Files",
+                                            style: GoogleFonts.varelaRound(
+                                              color: Colors.white,
+                                              fontSize: 16,
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                )
+                              : null;
                     },
                     child: discountImage == null
                         ? pasengerController.myUser.value.discountImage != null
@@ -388,7 +441,7 @@ class _AccountSettingPageState extends State<AccountSettingPage> {
       children: [
         InkWell(
           onTap: () {
-            !isEdit
+            !authController.isRegistered.value
                 ? Get.defaultDialog(
                     title: "Upload Profile Picture",
                     titleStyle: GoogleFonts.varelaRound(
@@ -441,7 +494,60 @@ class _AccountSettingPageState extends State<AccountSettingPage> {
                       ],
                     ),
                   )
-                : null;
+                : !isEdit
+                    ? Get.defaultDialog(
+                        title: "Upload Profile Picture",
+                        titleStyle: GoogleFonts.varelaRound(
+                            color: Colors.green,
+                            fontSize: 24,
+                            fontWeight: FontWeight.bold),
+                        titlePadding: const EdgeInsets.all(20),
+                        content: Column(
+                          children: [
+                            SizedBox(
+                              width: Get.width * .50,
+                              child: OutlinedButton(
+                                style: OutlinedButton.styleFrom(
+                                  backgroundColor: Colors.green,
+                                ),
+                                onPressed: () {
+                                  getProfileImage(ImageSource.camera);
+                                  Get.back();
+                                },
+                                child: Text(
+                                  "From Camera",
+                                  style: GoogleFonts.varelaRound(
+                                    color: Colors.white,
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ),
+                            ),
+                            SizedBox(
+                              width: Get.width * .50,
+                              child: OutlinedButton(
+                                style: OutlinedButton.styleFrom(
+                                  backgroundColor: Colors.green,
+                                ),
+                                onPressed: () {
+                                  getProfileImage(ImageSource.gallery);
+                                  Get.back();
+                                },
+                                child: Text(
+                                  "From Files",
+                                  style: GoogleFonts.varelaRound(
+                                    color: Colors.white,
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      )
+                    : null;
           },
           child: Container(
             margin: const EdgeInsets.all(3),

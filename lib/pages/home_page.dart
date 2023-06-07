@@ -707,7 +707,7 @@ class _HomePageState extends State<HomePage> {
                         children: [
                           const Expanded(child: SizedBox()),
                           Text(
-                            canCancel ? "Waiting" : "Cancel",
+                            canCancel ? "Cancel" : "Waiting",
                             style: GoogleFonts.varelaRound(
                               fontSize: 20,
                               fontWeight: FontWeight.bold,
@@ -719,7 +719,7 @@ class _HomePageState extends State<HomePage> {
                             backgroundColor: Colors.green,
                             child: Countdown(
                               controller: _controllerTimer,
-                              seconds: 30,
+                              seconds: 15,
                               build: (BuildContext context, double time) {
                                 return Text(time.toStringAsFixed(0),
                                     style: GoogleFonts.varelaRound(

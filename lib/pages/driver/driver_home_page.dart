@@ -66,7 +66,6 @@ class _DriverHomePageState extends State<DriverHomePage> {
 
   centerCamera() async {
     GoogleMapController googleMapController = await _controller.future;
-
     googleMapController.animateCamera(
       CameraUpdate.newCameraPosition(
         CameraPosition(
@@ -88,42 +87,46 @@ class _DriverHomePageState extends State<DriverHomePage> {
     );
     Geolocator.getPositionStream(locationSettings: locationSettings)
         .listen((Position? position) async {
-      _currentLocation = position;
+      if (mounted) {
+        setState(() {
+          _currentLocation = position;
 
-      // update marker
-      markers.add(Marker(
-        markerId: const MarkerId("currentLoc"),
-        icon: authController.driversIcon.value,
-        position:
-            LatLng(_currentLocation!.latitude, _currentLocation!.longitude),
-        infoWindow: const InfoWindow(title: "Your Location"),
-      ));
+          // update marker
+          markers.add(Marker(
+            markerId: const MarkerId("currentLoc"),
+            icon: authController.driversIcon.value,
+            position:
+                LatLng(_currentLocation!.latitude, _currentLocation!.longitude),
+            infoWindow: const InfoWindow(title: "Your Location"),
+          ));
 
-      // update location in database
-      await FirebaseFirestore.instance
-          .collection('driver_status')
-          .doc(userUid)
-          .update({
-        'latitude': _currentLocation!.latitude,
-        'longitude': _currentLocation!.longitude,
-        // 'status': status // offline, online, booked
-      });
-      if (driverController.isDriverBooked.value) {
-        if (driverController.isPickUp.value) {
-          rangeChecker(
-            80,
-            driverController.bookingInfo.value.destinaiton!,
-            LatLng(_currentLocation!.latitude, _currentLocation!.longitude),
-          );
-        } else {
-          rangeChecker(
-            80,
-            driverController.bookingInfo.value.sourceLoc!,
-            LatLng(_currentLocation!.latitude, _currentLocation!.longitude),
-          );
-        }
+          // update location in database
+          FirebaseFirestore.instance
+              .collection('driver_status')
+              .doc(userUid)
+              .update({
+            'latitude': _currentLocation!.latitude,
+            'longitude': _currentLocation!.longitude,
+            // 'status': status // offline, online, booked
+          });
+
+          if (driverController.isDriverBooked.value) {
+            if (driverController.isPickUp.value) {
+              rangeChecker(
+                80,
+                driverController.bookingInfo.value.destinaiton!,
+                LatLng(_currentLocation!.latitude, _currentLocation!.longitude),
+              );
+            } else {
+              rangeChecker(
+                80,
+                driverController.bookingInfo.value.sourceLoc!,
+                LatLng(_currentLocation!.latitude, _currentLocation!.longitude),
+              );
+            }
+          }
+        });
       }
-      setState(() {});
     });
   }
 
@@ -140,7 +143,7 @@ class _DriverHomePageState extends State<DriverHomePage> {
     }
   }
 
-  drawPolyLine() {
+  drawPolyLine() async {
     if (driverController.isDriverBooked.value) {
       LatLng destination = driverController.bookingInfo.value.destinaiton!;
       LatLng sourceLoc = driverController.bookingInfo.value.sourceLoc!;
@@ -167,7 +170,7 @@ class _DriverHomePageState extends State<DriverHomePage> {
       );
 
       // if driver booked get passenger data
-      driverController.passengerData.value = authController
+      driverController.passengerData.value = await authController
           .getUserData(driverController.bookingInfo.value.userId!);
     } else {
       return;
@@ -308,8 +311,14 @@ class _DriverHomePageState extends State<DriverHomePage> {
                       //   "Starmall Edsa",
                       //   14.582930626869585,
                       //   121.05352197211208,
+                      //   "${driverController.driverData.value.firstName!} ${driverController.driverData.value.lastName!}",
+                      //   driverController.pickUpTime.value,
+                      //   driverController.dropOffTime.value,
                       // );
+
                       print(driverController.driverData.value.firstName);
+                      print(driverController.pickUpTime.value);
+                      print(driverController.dropOffTime.value);
                       centerCamera();
                     },
                   ),
@@ -423,13 +432,19 @@ class _DriverHomePageState extends State<DriverHomePage> {
         if (isArrive) {
           if (driverController.isPickUp.value) {
             polylineCoordinates.clear();
+            driverController.dropOffTime.value = Timestamp.now();
+            // Get.snackbar("data",
+            //     "${driverController.driverData.value.firstName!} ${driverController.driverData.value.lastName!}, ${driverController.pickUpTime.value}, ${driverController.dropOffTime.value}");
             authController.sendEmailNotification(
               driverController.passengerData.value.contactPerson!,
-              "Madam/Sir",
+              "Madam/Si r",
               driverController.passengerData.value.firstName!,
               driverController.bookingInfo.value.destinationText!,
               driverController.bookingInfo.value.destinaiton!.latitude,
               driverController.bookingInfo.value.destinaiton!.longitude,
+              "${driverController.driverData.value.firstName!} ${driverController.driverData.value.lastName!}",
+              driverController.pickUpTime.value,
+              driverController.dropOffTime.value,
             );
             var hint =
                 driverController.bookingInfo.value.paymentMethod == "CASH"
@@ -451,6 +466,7 @@ class _DriverHomePageState extends State<DriverHomePage> {
           } else {
             driverController.isPickUp.value = true;
             isNear = false;
+            driverController.pickUpTime.value = Timestamp.now();
             notificationController.sendNotification(
               driverController.bookingInfo.value.driverId,
               driverController.bookingInfo.value.passengerToken,
@@ -649,10 +665,12 @@ class _DriverHomePageState extends State<DriverHomePage> {
 
   bookingInfoDialog() {
     Get.defaultDialog(
+      contentPadding: const EdgeInsets.all(20),
       title: "Booking Information",
       titleStyle: GoogleFonts.varelaRound(
           fontWeight: FontWeight.bold, color: Colors.green),
       content: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
             "From: ",
@@ -688,13 +706,12 @@ class _DriverHomePageState extends State<DriverHomePage> {
             ],
           ),
           const SizedBox(height: 20),
-          Text(
-            "Price: ",
-            style: GoogleFonts.varelaRound(fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(width: 20),
           Row(
             children: [
+              Text(
+                "Price: ",
+                style: GoogleFonts.varelaRound(fontWeight: FontWeight.bold),
+              ),
               Text(
                 "${driverController.bookingInfo.value.price ?? "Drop off location..."}",
                 style: GoogleFonts.varelaRound(),
@@ -708,7 +725,6 @@ class _DriverHomePageState extends State<DriverHomePage> {
                 "Payment Method: ",
                 style: GoogleFonts.varelaRound(fontWeight: FontWeight.bold),
               ),
-              const SizedBox(width: 20),
               Text(
                 driverController.bookingInfo.value.paymentMethod ?? "CASH",
                 style: GoogleFonts.varelaRound(),
@@ -722,7 +738,6 @@ class _DriverHomePageState extends State<DriverHomePage> {
                 "Notes: ",
                 style: GoogleFonts.varelaRound(fontWeight: FontWeight.bold),
               ),
-              const SizedBox(width: 20),
               Text(
                 driverController.bookingInfo.value.notes ?? "No Notes",
                 style: GoogleFonts.varelaRound(),

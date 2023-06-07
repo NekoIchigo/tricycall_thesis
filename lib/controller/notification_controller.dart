@@ -6,10 +6,9 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:http/http.dart' as http;
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:tricycall_thesis/pages/driver_found_page.dart';
-import 'package:tricycall_thesis/pages/home_page.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../pages/driver/booking_found_page.dart';
-import '../widgets/webview.dart';
 
 class NotificationController extends GetxController {
   // <---------------------------------- Handles Receiving of notification
@@ -68,6 +67,15 @@ class NotificationController extends GetxController {
     FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
   }
 
+  final Uri _url =
+      Uri.parse('https://pm.link/org-FSjssrznvGpyUWue7JPNkB1g/test/EqQ3Wh4');
+
+  Future<void> _launchUrl() async {
+    if (!await launchUrl(_url)) {
+      throw Exception('Could not launch $_url');
+    }
+  }
+
   void _handleMessage(RemoteMessage message) {
     // Extract the notification data
     final notification = message.notification;
@@ -105,15 +113,15 @@ class NotificationController extends GetxController {
         var driverID = data['driverId'];
         hint(data['hint']);
         if (data['hint'] == "arrive_at_destination_gcash") {
-          Get.to(() => const WebViewScreen(
-                url:
-                    'https://pm.link/org-FSjssrznvGpyUWue7JPNkB1g/test/EqQ3Wh4',
-              ));
+          _launchUrl();
+          // Get.to(() => const WebViewScreen(
+          //       url:
+          //           'https://pm.link/org-FSjssrznvGpyUWue7JPNkB1g/test/EqQ3Wh4',
+          //     ));
           ratingDialog();
         } else if (data['hint'] == "arrive_at_destination_cash") {
           ratingDialog();
         } else if (data['hint'] == "transaction_complete") {
-          Get.to(() => const HomePage());
           return;
         }
         Get.to(() => const DriverFoundPage());
@@ -188,6 +196,7 @@ class NotificationController extends GetxController {
 
   ratingDialog() {
     Get.defaultDialog(
+      barrierDismissible: false,
       title: "ALREADY ARRIVED TO YOUR DESTINATION",
       titleStyle: GoogleFonts.varelaRound(
         fontSize: 18,

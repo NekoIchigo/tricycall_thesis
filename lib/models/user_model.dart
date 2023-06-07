@@ -35,7 +35,7 @@ class UserModel {
       email: map['email'],
       contactPerson: map['contact_person'],
       image: map['image'],
-      discountImage: map['discount_image'],
+      discountImage: map['discount_image'] ?? "",
       phoneNumber: map['phone_number'],
     );
   }

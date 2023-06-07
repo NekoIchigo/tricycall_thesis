@@ -2,7 +2,6 @@ import 'dart:io';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:cloud_functions/cloud_functions.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
@@ -26,6 +25,8 @@ class DriverController extends GetxController {
   var chatId = "".obs;
   var passengerData = UserModel().obs;
   var driverData = DriverModel().obs;
+  var pickUpTime = Timestamp.now().obs;
+  var dropOffTime = Timestamp.now().obs;
 
   // User token
 

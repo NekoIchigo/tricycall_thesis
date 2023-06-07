@@ -295,17 +295,9 @@ class _DriverFoundPageState extends State<DriverFoundPage> {
     );
   }
 
-  paymentDialog() {
-    Get.defaultDialog(
-        title: "Gcash Payment",
-        content: Column(
-          // TODO: implement gcash payment
-          children: const [],
-        ));
-  }
-
   bookingInfoDialog() {
     Get.defaultDialog(
+      contentPadding: const EdgeInsets.all(20),
       title: "Booking Information",
       titleStyle: GoogleFonts.varelaRound(
           fontWeight: FontWeight.bold, color: Colors.green),
@@ -348,7 +340,6 @@ class _DriverFoundPageState extends State<DriverFoundPage> {
                 "Price: ",
                 style: GoogleFonts.varelaRound(fontWeight: FontWeight.bold),
               ),
-              const SizedBox(width: 20),
               Text(
                 "${bookingInfo.price ?? "Drop off location..."}",
                 style: GoogleFonts.varelaRound(),
@@ -369,12 +360,12 @@ class _DriverFoundPageState extends State<DriverFoundPage> {
             ],
           ),
           const SizedBox(height: 20),
-          Text(
-            "Notes: ",
-            style: GoogleFonts.varelaRound(fontWeight: FontWeight.bold),
-          ),
           Row(
             children: [
+              Text(
+                "Notes: ",
+                style: GoogleFonts.varelaRound(fontWeight: FontWeight.bold),
+              ),
               Flexible(
                 child: Text(
                   bookingInfo.notes ?? "No Notes",

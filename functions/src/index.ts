@@ -186,12 +186,30 @@ exports.driverResponse = functions.https.onCall(async (data, context) => {
 export const sendEmailNotification = functions
   .https
   .onCall(async (data, context) => {
-    const {receiverEmail, receiverName, userName, location, lat, lng} = data;
+    const {
+      receiverEmail,
+      receiverName,
+      userName,
+      location,
+      lat,
+      lng,
+      driverName,
+      pickUpTime,
+      dropoffTime,
+    } = data;
+
     console.log("ReceiverEmail: " + receiverEmail);
     console.log("receiverName: " + receiverName);
     console.log("userName: " + userName);
     console.log("location: " + location);
     console.log("lat: " + lat + "lng: " + lng);
+    console.log("driver_name: " + driverName);
+    console.log("pick_up_time: " + pickUpTime);
+    console.log("drop_off_time: " + dropoffTime);
+
+    // Convert pick_up_time and drop_off_time to strings
+    // const pickUpTimeStr = pickUpTime.toDate().toString();
+    // const dropOffTimeStr = dropoffTime.toDate().toString();
     // Create a Nodemailer transporter
     const transporter = nodemailer.createTransport({
       service: "Gmail",
@@ -204,85 +222,43 @@ export const sendEmailNotification = functions
     // Create the email template
     const emailTemplate = `
     <!DOCTYPE html>
-      <html>
-      <head>
-        <meta charset="UTF-8">
-        <title>Booking Arrival Notification</title>
-        <link href='https://fonts.googleapis.com/css?family=Nunito' rel='stylesheet'>
-        <style>
-          body {
-            font-family: 'Nunito';
-            text-align: center;
-            margin: 0;
-            padding: 20px;
-            background-image: url('https://firebasestorage.googleapis.com/v0/b/tricycallthesis.appspot.com/o/hero-bg.jpg?alt=media&token=72f121ec-7557-48ac-9985-c017c4be7736&_gl=1*1r7595k*_ga*MTI1NjEyNTMzNy4xNjgzMDEwMDM5*_ga_CW55HF8NVT*MTY4NTk3MjU2NC4xMTEuMS4xNjg1OTc0MDU5LjAuMC4w');
-            background-size: cover;
-            background-repeat: no-repeat;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            min-height: 100vh;
-          }
-
-          .content {
-            background-color: #fff;
-            padding: 20px;
-            border-radius: 10px;
-            display: inline-block;
-            max-width: 90%;
-            box-shadow: 0px 0px 10px rgba(0, 0, 0, 1); /* Add box shadow */
-          }
-          
-          h1 {
-            color: #000000;
-          }
-          
-          p {
-            color: #333;
-            line-height: 1.5;
-          }
-          
-          img.logo {
-            width: 100px;
-          }
-          
-          img.map {
-            width: 450px; /* Adjust the width as needed */
-            max-height: auto; /* Adjust the height as needed */
-            margin: 20px 0;
-            box-shadow: 0px 0px 20px rgba(0, 0, 0, 0.5); /* Add box shadow */
-          }
-
-          @media only screen and (min-width: 768px) {
-            .content {
-              max-width: 80%;
-            }
-            
-            h1 {
-              font-size: 28px;
-            }
-            
-            p {
-              font-size: 18px;
-            }
-          }
-        </style>
-      </head>
-      <body>
-        <div class="content">
-          
-          <h1>Booking Arrival Notification</h1>
-          <p>Dear ${receiverName},</p>
-          <p>We are pleased to inform you that ${userName}
-           has successfully arrived at the destination.</p>
-          <p>Location: ${location}</p>
-          <img class="map" src="https://maps.googleapis.com/maps/api/staticmap?center=${lat},${lng}&zoom=15&size=400x300&markers=color:red%7C${lat},${lng}&key=AIzaSyCbYWT5IPpryxcCqNmO_4EyFFCpIejPBf8" alt="Map" />
-          <p>Thank you for using our service.</p>
-          <p>Sincerely,</p>
-          <img class="logo" src="https://firebasestorage.googleapis.com/v0/b/tricycallthesis.appspot.com/o/logo.png?alt=media&token=7ebe7bfc-83fa-49b0-994d-8d40cbb7d444&_gl=1*miw374*_ga*MTI1NjEyNTMzNy4xNjgzMDEwMDM5*_ga_CW55HF8NVT*MTY4NTk3MjU2NC4xMTEuMS4xNjg1OTc0MTQzLjAuMC4w" alt="Logo">
-        </div>
-      </body>
-      </html>
+    <html>
+    <head>
+      <meta charset="UTF-8">
+      <title>Booking Arrival Notification</title>
+      <link href='https://fonts.googleapis.com/css?family=Nunito' rel='stylesheet'>
+    </head>
+    <body style="font-family: 'Nunito'; text-align: center; margin: 0; padding: 20px; background-image: url('https://firebasestorage.googleapis.com/v0/b/tricycallthesis.appspot.com/o/hero-bg.jpg?alt=media&token=72f121ec-7557-48ac-9985-c017c4be7736&_gl=1*10v6lzl*_ga*MTI1NjEyNTMzNy4xNjgzMDEwMDM5*_ga_CW55HF8NVT*MTY4NjA1ODE2NS4xMjEuMS4xNjg2MDU4NjE5LjAuMC4w'); background-size: cover; background-repeat: no-repeat; display: flex; align-items: center; justify-content: center; min-height: 100vh;">
+    
+      <div class="content" style="background-color: #fff; padding: 20px; 
+      border-radius: 10px; display: inline-block; 
+      max-width: 90%; box-shadow: 0px 0px 10px rgba(0, 0, 0, 1);">
+        <h1 style="color: #000000;">Booking Arrival Notification</h1>
+        <p style="color: #333; line-height: 1.5;">
+        Dear <span style="font-weight: bold;">Mr./Ms.</span>,</p>
+        <p style="color: #333; line-height: 1.5;">
+        We are pleased to inform you that 
+        <span style="font-weight: bold;">${userName}</span> 
+        has successfully arrived at the destination.</p>
+        <p style="color: #333; line-height: 1.5; display: flex; 
+        align-items: center; justify-content: center;">
+          <img src="https://firebasestorage.googleapis.com/v0/b/tricycallthesis.appspot.com/o/source_icon.png?alt=media&token=8bfd9afc-4c8d-4378-ac57-98018d829504&_gl=1*du037c*_ga*MTI1NjEyNTMzNy4xNjgzMDEwMDM5*_ga_CW55HF8NVT*MTY4NjA1ODE2NS4xMjEuMS4xNjg2MDU4MzU2LjAuMC4w" alt="Driver Image" style="width: 20px; margin-right: 10px;"> <span style="font-weight: bold;">${location}</span> <!-- Replace the image path with your actual driver image path -->
+        </p>
+        <p style="color: #333; line-height: 1.5; display: flex; 
+        align-items: center; justify-content: center;">
+          <img src="https://firebasestorage.googleapis.com/v0/b/tricycallthesis.appspot.com/o/tricycle_icon.png?alt=media&token=bbe934c0-02f4-4a0b-977d-e728c840ca63&_gl=1*cui6ev*_ga*MTI1NjEyNTMzNy4xNjgzMDEwMDM5*_ga_CW55HF8NVT*MTY4NjA1ODE2NS4xMjEuMS4xNjg2MDU4NDIxLjAuMC4w" alt="Driver Image" style="width: 20px; margin-right: 10px;"> <span style="font-weight: bold;">${driverName}</span> <!-- Replace the image path with your actual driver image path -->
+        </p>
+        <p style="color: #333; line-height: 1.5;">
+        Pick up time: ${pickUpTime} &nbsp;&nbsp;&nbsp; 
+        Drop off time: ${dropoffTime}</p>
+        <img class="map" src="https://maps.googleapis.com/maps/api/staticmap?center=${lat},${lng}&zoom=15&size=400x300&markers=color:red%7C${lat},${lng}&key=AIzaSyCbYWT5IPpryxcCqNmO_4EyFFCpIejPBf8" alt="Map" style="width: 450px; max-height: auto; margin: 20px 0; box-shadow: 0px 0px 20px rgba(0, 0, 0, 0.5);">
+        <p style="color: #333; line-height: 1.5;">
+        Thank you for using our service.</p>
+        <p style="color: #333; line-height: 1.5;">Sincerely,</p>
+        <img class="logo" src="https://firebasestorage.googleapis.com/v0/b/tricycallthesis.appspot.com/o/logo.png?alt=media&token=7ebe7bfc-83fa-49b0-994d-8d40cbb7d444&_gl=1*1ax2obt*_ga*MTI1NjEyNTMzNy4xNjgzMDEwMDM5*_ga_CW55HF8NVT*MTY4NjA1ODE2NS4xMjEuMS4xNjg2MDU4NDc3LjAuMC4w" alt="Logo" style="width: 100px;">
+      </div>
+    </body>
+    </html>
   `;
 
     // Define the email options

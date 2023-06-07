@@ -16,6 +16,7 @@ import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:google_maps_webservice/places.dart';
+import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:tricycall_thesis/models/user_model.dart';
 // ignore: depend_on_referenced_packages, library_prefixes
@@ -171,8 +172,25 @@ class AuthController extends GetxController {
   final cloudFunctions = FirebaseFunctions.instance;
 
 // Call the Cloud Function
-  Future<void> sendEmailNotification(String receiverEmail, String receiverName,
-      String userName, String location, double lat, double lng) async {
+  Future<void> sendEmailNotification(
+    String receiverEmail,
+    String receiverName,
+    String userName,
+    String location,
+    double lat,
+    double lng,
+    String driverName,
+    Timestamp pickUpTime,
+    Timestamp dropOffTime,
+  ) async {
+    // Convert Timestamp to DateTime
+    DateTime res = pickUpTime.toDate();
+    String formattedpickUpTime = DateFormat('yyyy-MM-dd HH:mm:ss').format(res);
+
+    DateTime res1 = dropOffTime.toDate();
+    String formatteddropOffTime =
+        DateFormat('yyyy-MM-dd HH:mm:ss').format(res1);
+
     final dynamic data = {
       'receiverEmail': receiverEmail,
       'receiverName': receiverName,
@@ -180,6 +198,9 @@ class AuthController extends GetxController {
       'location': location,
       'lat': lat,
       'lng': lng,
+      'driverName': driverName,
+      'pickUpTime': formattedpickUpTime,
+      'dropoffTime': formatteddropOffTime,
     };
     log("Function Called");
     try {
@@ -204,6 +225,7 @@ class AuthController extends GetxController {
     var result =
         await FirebaseFirestore.instance.collection("users").doc(userId).get();
     if (result.exists) {
+      print(result.data()!);
       userData = UserModel.fromJson(result.data()!);
     } else {
       Get.snackbar(
