@@ -3,7 +3,6 @@ import 'dart:developer';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 
 import 'package:flutter_polyline_points/flutter_polyline_points.dart';
 import 'package:loading_animation_widget/loading_animation_widget.dart';
@@ -11,22 +10,18 @@ import 'package:geolocator/geolocator.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
-import 'package:paymongo_sdk/paymongo_sdk.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:timer_count_down/timer_controller.dart';
 import 'package:timer_count_down/timer_count_down.dart';
 import 'package:tricycall_thesis/pages/select_locations_page.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 import '../controller/auth_controller.dart';
 import '../controller/notification_controller.dart';
 import '../controller/passenger_controller.dart';
-import '../models/tariff_calculator.dart';
 import '../widgets/drawer.dart';
 import 'package:group_radio_button/group_radio_button.dart';
 
 import '../widgets/webview.dart';
-import 'driver_found_page.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -60,7 +55,7 @@ class _HomePageState extends State<HomePage> {
   List<LatLng> polylineCoordinates = [];
   Map<PolylineId, Polyline> polylines = {};
 
-  double? travelPrice, minute, seconds;
+  double? minute, seconds;
   String? time;
   double totalDistance = 0.0;
   String _placeDistance = ""; // Stores total distance of polyline
@@ -178,10 +173,12 @@ class _HomePageState extends State<HomePage> {
   setPrice() async {
     SharedPreferences localStorage = await SharedPreferences.getInstance();
     int totalPassenger = localStorage.getInt("total_passengers") ?? 1;
-    travelPrice = // TODO : fix computation
-        TariffCalculator.calculateTariff(
-            totalDistance.toInt(), totalPassenger, true, true);
-    localStorage.setInt("travel_price", travelPrice!.toInt());
+    passengerController.travelPrice.value = // TODO : fix computation
+        await authController.calculateTariff(totalDistance.toInt(),
+            totalPassenger, passengerController.travelDiscount.value);
+    localStorage.setInt("travel_price", passengerController.travelPrice.value);
+    print(
+        "price ${passengerController.travelPrice.value}, distance: ${totalDistance.toInt()}");
   }
 
   setTime() {
@@ -618,7 +615,14 @@ class _HomePageState extends State<HomePage> {
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
                         ),
-                      )
+                      ),
+                      Text(
+                        " mins",
+                        style: GoogleFonts.varelaRound(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
                     ],
                   ),
                 ),
@@ -644,11 +648,15 @@ class _HomePageState extends State<HomePage> {
                                   'https://pm.link/org-FSjssrznvGpyUWue7JPNkB1g/test/EqQ3Wh4',
                             ));
                       },
-                      child: Text(
-                        "${travelPrice?.toStringAsFixed(2) ?? "Price"} ",
-                        style: GoogleFonts.varelaRound(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
+                      child: Obx(
+                        () => Text(
+                          passengerController.travelPrice.value != 0
+                              ? "${passengerController.travelPrice.value}"
+                              : "Price",
+                          style: GoogleFonts.varelaRound(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
                       ),
                     ),

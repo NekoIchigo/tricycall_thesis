@@ -308,7 +308,7 @@ class _BookFoundPageState extends State<BookFoundPage> {
       children: [
         Row(
           children: [
-            const SizedBox(width: 20),
+            const SizedBox(width: 10),
             OutlinedButton(
               style: OutlinedButton.styleFrom(
                 side: const BorderSide(color: Colors.green),
@@ -369,7 +369,24 @@ class _BookFoundPageState extends State<BookFoundPage> {
                 ),
               ),
             ),
-            const SizedBox(width: 25),
+            const SizedBox(width: 10),
+            Column(
+              children: [
+                Icon(
+                  Icons.people_outline,
+                  size: Get.width * .10,
+                  color: Colors.green,
+                ),
+                Text(
+                  "${driverController.bookingInfo.value.totalPassnger} Passengers",
+                  style: GoogleFonts.varelaRound(
+                    fontSize: 9,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(width: 10),
             Image.asset(
               "assets/images/peso_icon.png",
               width: 20,

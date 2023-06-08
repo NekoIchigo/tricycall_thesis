@@ -12,6 +12,7 @@ class BookingModel {
   String? paymentMethod;
   String? tripDistance;
   String? status;
+  int? totalPassnger;
   int? price;
   LatLng? destinaiton;
   LatLng? sourceLoc;
@@ -28,6 +29,7 @@ class BookingModel {
     this.paymentMethod,
     this.tripDistance,
     this.status,
+    this.totalPassnger,
     this.price,
     this.destinaiton,
     this.sourceLoc,
@@ -47,6 +49,7 @@ class BookingModel {
       tripDistance: json['trip_distance'],
       status: json['status'],
       timestamp: json['timestamp'],
+      totalPassnger: json['total_passenger'] ?? 1,
       price: json['price']?.toInt(),
       destinaiton: LatLng(json['drop_off_location'].latitude,
           json['drop_off_location'].longitude),
@@ -70,6 +73,7 @@ class BookingModel {
       tripDistance: data['trip_distance'] as String?,
       status: data['status'] as String?,
       price: data['price'] as int?,
+      totalPassnger: data['total_passenger'] ?? 1,
       timestamp: data['timestamp'] as Timestamp?,
       destinaiton: LatLng(data['drop_off_location'].latitude,
           data['drop_off_location'].longitude),

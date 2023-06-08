@@ -23,6 +23,7 @@ import 'package:tricycall_thesis/models/user_model.dart';
 import 'package:tricycall_thesis/pages/account_setting_page.dart';
 
 import '../pages/driver/driver_home_page.dart';
+import '../pages/driver/verification_notice_page.dart';
 import '../pages/home_page.dart';
 import '../pages/login_page.dart';
 
@@ -121,6 +122,7 @@ class AuthController extends GetxController {
 
     User? user = FirebaseAuth.instance.currentUser;
     localStorage.setString("user_uid", user?.uid ?? "");
+    var isDriverapp = localStorage.getBool("driver_app") ?? false;
 
     if (user != null) {
       userUID(user.uid);
@@ -137,8 +139,25 @@ class AuthController extends GetxController {
             Get.offAll(() => const HomePage());
           }
         } else {
-          isRegistered(false);
-          Get.offAll(() => const AccountSettingPage());
+          if (isDriverapp) {
+            var driverAppId = localStorage.getString("driver_app_id");
+            // Get a reference to the document you want to update
+            DocumentReference documentRef = FirebaseFirestore.instance
+                .collection('driver_application')
+                .doc(driverAppId);
+
+            // Update the document with a new field
+            documentRef.update({'user_id': user.uid}).then((value) {
+              log('Field added successfully!');
+            }).catchError((error) {
+              log('Error adding field: $error');
+            });
+            localStorage.setBool("driver_app", false);
+            Get.to(() => const VerificationNoticePage());
+          } else {
+            isRegistered(false);
+            Get.offAll(() => const AccountSettingPage());
+          }
         }
       }).catchError((e) {
         debugPrint("Error while decideRoute is $e");
@@ -342,6 +361,36 @@ class AuthController extends GetxController {
         ),
       ),
     );
+  }
+
+  Future<int> calculateTariff(
+      int distance, int totalPassengers, bool discount) async {
+    final docSnapshot = await FirebaseFirestore.instance
+        .collection('tariff')
+        .doc('official_tariff')
+        .get();
+
+    final basePrice = docSnapshot.data()!['base_price'] as int;
+    final pricePerPassenger = docSnapshot.data()!['max_pass_pr'] as int;
+    final pricePerKilometer = docSnapshot.data()!['per_km'] as int;
+
+    int tariffPrice = basePrice;
+
+    // Apply tariff based on the number of passengers
+    if (totalPassengers >= 3 && totalPassengers <= 4) {
+      tariffPrice = totalPassengers * pricePerPassenger;
+    }
+
+    // Apply discount if applicable
+    if (discount) {
+      tariffPrice -= (tariffPrice * 0.2).round();
+    }
+
+    // Apply extra charge for distance
+    int extraKM = (distance - 2).clamp(0, distance);
+    tariffPrice += extraKM * pricePerKilometer;
+
+    return tariffPrice;
   }
 
   /*

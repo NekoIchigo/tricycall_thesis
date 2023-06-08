@@ -25,7 +25,7 @@ class _PerformancePageState extends State<PerformancePage> {
   bool isListEmpty = true;
   List<RatingModel> ratingList = [];
   BookingModel bookingData = BookingModel();
-  int totalRating = 0;
+  var totalRating = 0;
   double aveRating = 0.0;
 
   getAllRating() async {
@@ -97,7 +97,7 @@ class _PerformancePageState extends State<PerformancePage> {
             child: Column(
               children: [
                 Text(
-                  "RATING",
+                  "RATING SCORE: ${aveRating.toStringAsFixed(2)}",
                   style: GoogleFonts.varelaRound(
                     fontSize: 20,
                   ),
@@ -125,7 +125,7 @@ class _PerformancePageState extends State<PerformancePage> {
                     fontStyle: FontStyle.italic,
                     fontSize: 14,
                   ),
-                )
+                ),
               ],
             ),
           ),

@@ -619,7 +619,7 @@ class _AccountSettingPageState extends State<AccountSettingPage> {
             return;
           }
           if (!authController.isRegistered.value) {
-            if (selectedImage == null || discountImage == null) {
+            if (selectedImage == null) {
               Get.snackbar("Image empty", "Please insert image");
             } else {
               pasengerController.isProfileUploading(true);

@@ -1,3 +1,4 @@
+import 'dart:developer';
 import 'dart:io';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -26,6 +27,8 @@ class PassengerController extends GetxController {
   RxDouble driverRating = 0.0.obs;
   RxBool isAssignedRoute = false.obs;
   RxBool isUrlLoading = true.obs;
+  RxInt travelPrice = 0.obs;
+  RxBool travelDiscount = false.obs;
 
   changeLocationSet(value) {
     isLocationsSet(value);
@@ -105,6 +108,11 @@ class PassengerController extends GetxController {
         .listen((event) {
       myUser.value = UserModel.fromJson(event.data()!);
     });
+    print("discount_url: ${myUser.value.discountImage}");
+    if (myUser.value.discountImage != null) {
+      travelDiscount(true);
+      print("travelDiscount: ${travelDiscount.value}");
+    }
   }
 
   storeBookingInfo(token) async {
@@ -117,6 +125,7 @@ class PassengerController extends GetxController {
     String destination = localStorage.getString("destination")!;
     String totalDistance = localStorage.getString("total_distance")!;
     int travelPrice = localStorage.getInt("travel_price")!;
+    int totalPassenger = localStorage.getInt("total_passengers") ?? 1;
 
     LatLng sourceLatLng =
         await authController.buildLatLngFromAddress(sourceLocation);
@@ -144,6 +153,7 @@ class PassengerController extends GetxController {
       'drop_off_text': destination,
       'passenger_token': token,
       'phone_number': phoneNumber,
+      'total_passenger': totalPassenger,
       'timestamp': Timestamp.now(),
       'status': 'waiting' // waiting, ongoing, cancelled, payment, finish
     }, SetOptions(merge: true)).then((value) {
@@ -159,9 +169,9 @@ class PassengerController extends GetxController {
     var ratingVal = localStorage.getInt("rating_value");
     var commentVal = localStorage.getString("comment_value");
     // var ratingsId = result.id;
-
+    log("bookingId.value ${bookingId.value}");
     result.set({
-      "booking_id": bookingUId,
+      "booking_id": bookingId.value,
       "driver_id": driverId,
       "rating_value": ratingVal,
       "comment_value": commentVal,

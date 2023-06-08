@@ -282,6 +282,26 @@ class _RideHistoryState extends State<RideHistory> {
                                   Row(
                                     children: [
                                       Text(
+                                        "Total Passenger: ",
+                                        style: GoogleFonts.varelaRound(
+                                            color: Colors.black,
+                                            fontSize: 14,
+                                            fontWeight: FontWeight.bold),
+                                      ),
+                                      const Expanded(child: SizedBox()),
+                                      Text(
+                                        "${allBookings[index].totalPassnger ?? "Total Passenger"}",
+                                        style: GoogleFonts.varelaRound(
+                                          color: Colors.black,
+                                          fontSize: 14,
+                                        ),
+                                      )
+                                    ],
+                                  ),
+                                  const SizedBox(height: 5),
+                                  Row(
+                                    children: [
+                                      Text(
                                         "Driver name: ",
                                         style: GoogleFonts.varelaRound(
                                             color: Colors.black,

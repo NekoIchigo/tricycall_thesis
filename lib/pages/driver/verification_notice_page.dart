@@ -56,7 +56,7 @@ class _VerificationNoticePageState extends State<VerificationNoticePage> {
                 SizedBox(
                   width: Get.width * .75,
                   child: Text(
-                    "WE WILL SEND YOU AN EMAIL AND TEXT MESSAGE ONCE YOUR ACCOUNT IS VERIFIED.",
+                    "WE WILL SEND YOU AN EMAIL ONCE YOUR ACCOUNT IS VERIFIED.",
                     textAlign: TextAlign.center,
                     style: GoogleFonts.varelaRound(
                       fontSize: 18,

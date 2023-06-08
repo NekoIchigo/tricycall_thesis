@@ -14,6 +14,7 @@ import 'package:tricycall_thesis/pages/driver/driver_home_page.dart';
 import '../models/booking_model.dart';
 import '../models/user_model.dart';
 import '../pages/driver/verification_notice_page.dart';
+import '../pages/otp_verification_page.dart';
 
 class DriverController extends GetxController {
   var isProfileUploading = false.obs;
@@ -53,6 +54,8 @@ class DriverController extends GetxController {
     return imageUrl;
   }
 
+  RxBool isApplicationUploading = false.obs;
+
   storeDriverApplication(
     String firstName,
     String lastName,
@@ -63,12 +66,19 @@ class DriverController extends GetxController {
     File? licenseFile,
     File? tricycleFile,
   ) async {
+    SharedPreferences localStorage = await SharedPreferences.getInstance();
     String licenseUrl = "", tricycleUrl = "";
     if (licenseFile != null && tricycleFile != null) {
       licenseUrl = await uploadImage(licenseFile, true);
       tricycleUrl = await uploadImage(tricycleFile, false);
     }
-    FirebaseFirestore.instance.collection('driver_application').doc().set({
+    var docRef =
+        FirebaseFirestore.instance.collection('driver_application').doc();
+
+    var docId = docRef.id;
+    localStorage.setString("driver_app_id", docId);
+
+    docRef.set({
       'first_name': firstName,
       'last_name': lastName,
       'phone_number': mobileNumber,
@@ -79,9 +89,9 @@ class DriverController extends GetxController {
       'tricycle_pic_url': tricycleUrl,
       'status': "ongoing", // rejected, ongoing, accepted, cancelled
     }, SetOptions(merge: true)).then((value) {
-      isProfileUploading(false);
-
-      Get.to(() => const VerificationNoticePage());
+      isApplicationUploading(false);
+      Get.to(() => OtpVerificationPage(phoneNumber: "+63$mobileNumber"));
+      // Get.to(() => const VerificationNoticePage());
     });
   }
 

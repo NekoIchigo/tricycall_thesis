@@ -1,3 +1,4 @@
+/* eslint-disable max-len */
 import * as functions from "firebase-functions";
 import * as admin from "firebase-admin";
 import * as nodemailer from "nodemailer";
@@ -283,3 +284,54 @@ export const sendEmailNotification = functions
       }
     }
   });
+
+exports.sendEmailOnDriverApplication = functions.firestore
+  .document("driver_application/{applicationId}")
+  .onCreate(async (snapshot, context) => {
+    try {
+      const applicationData = snapshot.data();
+      const email = applicationData.email;
+      const firstName = applicationData.first_name;
+
+      // Create a nodemailer transporter with your email service provider credentials
+      const transporter = nodemailer.createTransport({
+        service: "Gmail",
+        auth: {
+          user: functions.config().gmail.email,
+          pass: functions.config().gmail.password,
+        },
+      });
+
+      // Define the email template
+      const logoImageUrl = "https://example.com/logo.png"; // URL to your logo image
+      const greeting = `Hello ${firstName}!`;
+      const message = "Thank you for applying. Please wait for your application to be approved.";
+      const emailBody = `
+        <div>
+          <img src="${logoImageUrl}" alt="Tricycall Logo" />
+          <h1>${greeting}</h1>
+          <p>${message}</p>
+        </div>
+      `;
+
+      // Define the email options
+      const mailOptions = {
+        from: "tricycall123456@gmail.com",
+        to: email,
+        subject: "Application Confirmation",
+        html: emailBody,
+      };
+
+      // Send the email
+      await transporter.sendMail(mailOptions);
+
+      return {success: true};
+    } catch (error) {
+      console.error("Error sending email:", error);
+      throw new functions.https.HttpsError(
+        "internal",
+        "An error occurred while sending the email."
+      );
+    }
+  });
+
